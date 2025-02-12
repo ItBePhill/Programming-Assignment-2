@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include <fstream>
+#include <iomanip>
 #include <vector>
 #include <string>
 
@@ -29,9 +30,9 @@ TODO:	/  Doing
 - Create Utility functions /
 	* Read Text 
 	* Write Text 
-	* Menu Template /
+	* Menu Template //
 		- Potentially make title update automatically to centre with subtitle
-	* Question Template /
+	* Question Template //
 - Create Main Functions
 	* Welcome Screen
 	* Calculate Pay / Income Tax
@@ -74,11 +75,11 @@ public:
 		std::string title = "What Would You Like To Do?";
 		std::vector<std::string> options;
 		//options will by default have a back option
-		Question(std::string title = "What Would you Like to do?", std::vector<std::string> options = {"Back"}) : title(title), options(options) {
+		Question(std::string title = "What Would you Like to do?", std::vector<std::string> options = { "Back" }) : title(title), options(options) {
 			this->title = title;
 			this->options = options;
 		}
-		
+
 		//Ask the question
 		int ask(utility& util) {
 			if (options.back() != "Back") {
@@ -92,9 +93,9 @@ public:
 			//display title of question
 			std::cout << std::endl << title << std::endl;
 			//display options
-			for (int i = 0; i <= options.size()-1; i++) {
+			for (int i = 0; i <= options.size() - 1; i++) {
 				// 0 - {Answer}
-				std::cout << i+1 << " - " << options[i] << std::endl;
+				std::cout << i + 1 << " - " << options[i] << std::endl;
 			}
 
 			//get user input
@@ -103,6 +104,7 @@ public:
 			//loop until we get an answer
 			while (inputint == 0) {
 				//get the input
+				std::cout << "- ";
 				std::getline(std::cin, inputstr);
 				//convert string to int and check if it is a number
 				inputint = std::strtol(inputstr.c_str(), NULL, 0);
@@ -123,7 +125,7 @@ public:
 					else {
 						return inputint;
 					}
-				
+
 				}
 			}
 		}
@@ -155,19 +157,33 @@ public:
 		subtitle (string) *Optional* - a subtitle displayed under the title, could be useful for nested menus
 		content (string) *Optional* - Content in the menu e.g. could be a paragraph or just a sentence
 		question *Optional* - A Question to ask the user, e.g. what menu to move to
-
+		utility is technically optional, but in reality it is not and you need to pass utility in.
 	There will always be a back option in the question so no need to add one
 	*/
 	int Menu(std::string title, std::string subtitle = "", std::string content = "", Question question = Question(), utility util = utility()) {
-		std::cout << "============ " << title << " ============ " << nest << std::endl;
-		std::cout << "-------- " << subtitle << "--------" << std::endl;
-		std::cout << content;
+		const int windowSize = 119;
+		//Values chosen through trial-and-error
+		const int windowSizeDiffTOffset = -4;
+		const int windowSizeDiffSOffset = -4;
+		const int windowSizeDiffT = windowSize - title.size()+windowSizeDiffTOffset;
+		const int windowSizeDiffS = windowSize - subtitle.size()+windowSizeDiffSOffset;
+		std::cout << title.size();
+		std::cout << subtitle.size();
+		//Create Menu
+		for (int i = 0; i <= windowSizeDiffT / 2; i++) std::cout << "=";
+		std::cout << title;
+		for (int i = 0; i <= windowSizeDiffT / 2; i++) std::cout << "=";
+		std::cout << std::endl;
+		for (int i = 0; i <= windowSizeDiffS / 2; i++) std::cout << "-";
+		std::cout << subtitle;
+		for (int i = 0; i <= windowSizeDiffS / 2; i++) std::cout << "-";
+		std::cout << std::endl << content << std::endl;
+		std::cout << "----------------------------------------------------------------------------------------------------------------------";
 		return question.ask(util);
 	}
 
 	
 	
-
 	
 };
 //---------------------------------------------------------
@@ -212,7 +228,7 @@ void Hello(utility& util) {
 }
 void Welcome(utility& util) {
 	system("cls");
-	int answer = util.Menu("Welcome!", "Welcome to the payroll system", "The payroll system will contain all the information for a employee and their pay including income tax!", utility::Question("Hello World", { "Hi", "Hello"}));
+	int answer = util.Menu("Payment Information", "Welcome to the payroll system!", "The payroll system will contain all the information for an employee and their pay including income tax", utility::Question("What Would You Like To Do?", { "View Employee Information", "View Payment Information"}));
 	switch (answer) {
 		//case 0 is back or quit
 	case 0:
@@ -236,6 +252,9 @@ The main function will call other helper functions
 which will do the actual calculations and other stuff
 */
 int main() {
+	std::cout << "- WARNING -\nResizing Window smaller than default may cause menus to break\n";
+	system("pause");
+	std::cout << "\n";
 	utility util = utility();
 	Welcome(util);
 
