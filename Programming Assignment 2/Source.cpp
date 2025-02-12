@@ -42,8 +42,8 @@ TODO:	/  Doing
 */
 class utility;
 //Function Definitions ------------------------------------
-void Hello(utility& util);
-void Hi(utility& util);
+void Payment(utility& util);
+void Info(utility& util);
 void Welcome(utility& util);
 
 
@@ -59,8 +59,40 @@ class utility {
 public:
 	//The amount of nested menus the user is currently in;
 	int nest = 0;
+	//The size of the window
+	int windowSize = 119;
+	//Adjust window size
+	void windowSizeConfig() {
+		system("cls");
+		int answer = Menu("Window Size", "Configure the Window Size, Current Window Size: " + std::to_string(this->windowSize), "Adjust Window Size until the title reaches the corner of the screen", {"What Would you Like to do?", {"Edit"}}, *this);
+		switch (answer) {
+		case 0:
+			return;
+
+		case 1:
+			system("cls");
+			std::cout << "Enter a Number above 0 (decimals will be rounded up), Current Window Size: " << std::to_string(this->windowSize) << "\n- ";
+			std::string answerStr;
+			int answer = 0;
+			while (answer == 0) {
+				std::getline(std::cin, answerStr);
+				answer = strtol(answerStr.c_str(), NULL, 0);
+				//user either inputted an incorrect number or a letter
+				if (answer <= 0) {
+					std::cout << "Invalid input: Try Again";
+					answer = 0;
+					continue;
+				}
+				
+			}
+			std::cout << "Window Size was changed from: " << this->windowSize << "to: " << answer;
+			this->windowSize = answer;
+			break;
+		} 
+		windowSizeConfig();
+	}
 	/*
-	little weird having a class nested in a class but it's cleaner than having it separate so o well
+	little weird having a class nested in a class but it's cleaner than having it separate so oh well
 	Will store a question e.g.
 	1 - Add Credits
 	2 - Create Order 
@@ -109,9 +141,8 @@ public:
 				//convert string to int and check if it is a number
 				inputint = std::strtol(inputstr.c_str(), NULL, 0);
 				//it isn't a number
-				std::cout << inputint;
 				if (inputint == 0 or inputint > options.size() or inputint < 1) {
-					std::cout << "Entry is not a valid!";
+					std::cout << std::endl << "Entry is not a valid!\n";
 					system("pause");
 					break;
 				}
@@ -127,7 +158,9 @@ public:
 					}
 
 				}
+				return -1;
 			}
+			return -1;
 		}
 	};
 
@@ -149,6 +182,10 @@ public:
 		return 0;
 
 	}
+	//Create a divider with "-" as the filler
+	void CreateDivider(utility& util) {
+		std::cout << std::endl << std::setfill('-') << std::setw(util.windowSize - 1) << "-" << std::endl;
+	}
 
 	/*
 	Create and Show the user a standardised menu, content and question are technically optional but you should probably use at least one
@@ -160,25 +197,31 @@ public:
 		utility is technically optional, but in reality it is not and you need to pass utility in.
 	There will always be a back option in the question so no need to add one
 	*/
+
+	
 	int Menu(std::string title, std::string subtitle = "", std::string content = "", Question question = Question(), utility util = utility()) {
-		const int windowSize = 119;
-		//Values chosen through trial-and-error
-		const int windowSizeDiffTOffset = -4;
-		const int windowSizeDiffSOffset = -4;
-		const int windowSizeDiffT = windowSize - title.size()+windowSizeDiffTOffset;
-		const int windowSizeDiffS = windowSize - subtitle.size()+windowSizeDiffSOffset;
-		std::cout << title.size();
-		std::cout << subtitle.size();
+		//The size of the window (there is a way to get this automatically but it's complex and platform dependent)
+		//the difference between the size of the window and the size of the title in characters
+		const int windowSizeDiffT = util.windowSize - title.size();
+		const int windowSizeDiffS = util.windowSize - subtitle.size();
+	/*	std::cout << title.size();
+		std::cout << subtitle.size();*/
+
 		//Create Menu
-		for (int i = 0; i <= windowSizeDiffT / 2; i++) std::cout << "=";
-		std::cout << title;
-		for (int i = 0; i <= windowSizeDiffT / 2; i++) std::cout << "=";
-		std::cout << std::endl;
-		for (int i = 0; i <= windowSizeDiffS / 2; i++) std::cout << "-";
-		std::cout << subtitle;
-		for (int i = 0; i <= windowSizeDiffS / 2; i++) std::cout << "-";
-		std::cout << std::endl << content << std::endl;
-		std::cout << "----------------------------------------------------------------------------------------------------------------------";
+		//Display Title
+		std::cout << std::setfill('=') << std::setw(ceil((windowSizeDiffT - 2) / 2)) << " " << title << " ";
+		std::cout << std::setfill('=') << std::setw(ceil((windowSizeDiffT - 1) / 2 )) << "=";
+		std::cout << "\n";
+		std::cout << std::setfill('-') << std::setw(ceil((windowSizeDiffS - 2) / 2)) << " " << subtitle << " ";
+		std::cout << std::setfill('-') << std::setw(ceil((windowSizeDiffS - 1) / 2)) << "-";
+		if (content != "") {
+			CreateDivider(util);
+			std::cout << content;
+			CreateDivider(util);
+		}
+		else {
+			CreateDivider(util);
+		}
 		return question.ask(util);
 	}
 
@@ -203,32 +246,48 @@ public:
 
 
 
-void Hi(utility& util) {
+void Payment(utility& util) {
 	system("cls");
-	int answer = util.Menu("Hi!", "Hi!", "Hi,Hi,Hi,Hi,Hi,Hi,Hi,Hi,Hi,Hi", { "Hi!", {"Hello"}}, util);
+	int answer = util.Menu("Payment Information", "View Payment Information", "", utility::Question(), util);
 	switch (answer) {
 	case 0:
 		util.nest--;
 		return;
 	case 1:
 		util.nest++;
-		Hello(util);
+		Payment(util);
 	}
-	Hi(util);
+	Info(util);
 }
-void Hello(utility& util) {
+void Info(utility& util) {
 	system("cls");
-	int answer = util.Menu("Hello!", "Hello!", "Hello,Hello,Hello,Hello,Hi,Hi,Hi,Hi,Hi,Hi");
+	int answer = util.Menu("Employee Information", "View employee information", "", utility::Question(), util);
 	switch (answer) {
 	case 0:
 		util.nest--;
 		return;
 	}
-	Hello(util);
+	Payment(util);
+}
+
+void config(utility& util) {
+	system("cls");
+	int answer = util.Menu("Config", "Configure program settings", "", {"What Would you Like to do?", {"Window Size"}}, util);
+	switch (answer) {
+	case 0:
+		util.nest--;
+		return;
+
+	case 1:
+		util.nest++;
+		util.windowSizeConfig();
+
+	}
+	config(util);
 }
 void Welcome(utility& util) {
 	system("cls");
-	int answer = util.Menu("Payment Information", "Welcome to the payroll system!", "The payroll system will contain all the information for an employee and their pay including income tax", utility::Question("What Would You Like To Do?", { "View Employee Information", "View Payment Information"}));
+	int answer = util.Menu("Welcome!", "Welcome to the payroll system!", "The payroll system will contain all the information for an employee and their pay including income tax", { "What Would You Like To Do?", { "View Payment Information", "View Employee Information", "Configure"}}, util);
 	switch (answer) {
 		//case 0 is back or quit
 	case 0:
@@ -236,11 +295,15 @@ void Welcome(utility& util) {
 		return;
 	case 1:
 		util.nest++;
-		Hi(util);
+		Payment(util);
 		break;
 	case 2:
 		util.nest++;
-		Hello(util);
+		Info(util);
+		break;
+	case 3:
+		util.nest++;
+		config(util);
 		break;
 
 	}
