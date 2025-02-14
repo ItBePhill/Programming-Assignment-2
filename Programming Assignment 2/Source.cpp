@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <vector>
 #include <string>
+#include <windows.h>
 
 /*
 Programming Assignment 2 - Payroll System - Phillip Wood
@@ -31,15 +32,36 @@ TODO:	/  Doing
 	* Read Text 
 	* Write Text 
 	* Menu Template //
-		- Potentially make title update automatically to centre with subtitle
+		- Potentially make title update automatically to centre with subtitle //
 	* Question Template //
 - Create Main Functions
-	* Welcome Screen
-	* Calculate Pay / Income Tax
+	* Welcome Screen /
+	* Find Employee information
+	* Find specified Employee Pay for each month or a specified month
+	* Read from pay file by inputting file name
+	* Write employees id number and monthly pay before tax deduction to a file called '{file}_output.txt'
+	* Record error in a pay file by adding it to a file called errors.txt in format {name of file} {error description}
 
 
 
 */
+
+/*
+Code Taken from : https://stackoverflow.com/questions/6812224/getting-terminal-size-in-c-for-windows/12642749#12642749
+Only works on windows but there is a Linux version available 
+*/
+int getWidth() {
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	int columns, rows;
+
+	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+	columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+	rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+
+	printf("columns: %d\n", columns);
+	printf("rows: %d\n", rows);
+	return columns;
+}
 class utility;
 //Function Definitions ------------------------------------
 void Payment(utility& util);
@@ -52,7 +74,7 @@ void Welcome(utility& util);
 //---------------------------------------------------------
 
 
-//Classes -------------------------------------------------
+//Classes -------------------------------------------------W
 
 //Utility functions e.g. Read, Write
 class utility {
@@ -64,7 +86,18 @@ public:
 	//Adjust window size
 	void windowSizeConfig() {
 		system("cls");
-		int answer = Menu("Window Size", "Configure the Window Size, Current Window Size: " + std::to_string(this->windowSize), "Adjust Window Size until the title reaches the corner of the screen", {"What Would you Like to do?", {"Edit"}}, *this);
+		//examples for good and bad window sizes
+		std::string goodbadbad =
+R"( 
+Good:                   Too Low:                   Too High:       
+ ----------------        ----------------         ----------------   
+|=====title======|      |===title===     |       |=====title======|
+|----subtitle----|      |--subtitle--    |       |=               |
+|                |      |                |       |----subtitle----|
+|                |      |                |       |-               |
+ ----------------        ----------------         ----------------
+)";
+		int answer = this->Menu("Window Size", "Configure the Window Size, Current Window Size: " + std::to_string(this->windowSize), "Adjust Window Size\nExamples:\n"+goodbadbad, {"What Would you Like to do ? ", {"Edit"}}, *this);
 		switch (answer) {
 		case 0:
 			return;
@@ -182,7 +215,7 @@ public:
 		return 0;
 
 	}
-	//Create a divider with "-" as the filler
+	//Create a divider the size of the window with "-" as the filler
 	void CreateDivider(utility& util) {
 		std::cout << std::endl << std::setfill('-') << std::setw(util.windowSize - 1) << "-" << std::endl;
 	}
@@ -204,8 +237,6 @@ public:
 		//the difference between the size of the window and the size of the title in characters
 		const int windowSizeDiffT = util.windowSize - title.size();
 		const int windowSizeDiffS = util.windowSize - subtitle.size();
-	/*	std::cout << title.size();
-		std::cout << subtitle.size();*/
 
 		//Create Menu
 		//Display Title
@@ -315,10 +346,13 @@ The main function will call other helper functions
 which will do the actual calculations and other stuff
 */
 int main() {
+	
+
 	std::cout << "- WARNING -\nResizing Window smaller than default may cause menus to break\n";
 	system("pause");
 	std::cout << "\n";
 	utility util = utility();
+	util.windowSize = getWidth();
 	Welcome(util);
 
 }
