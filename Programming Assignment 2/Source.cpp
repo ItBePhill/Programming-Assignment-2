@@ -15,6 +15,16 @@ Calculate the pay and income tax on pay and display it
 Allow a user to enter a pay file and recursively show pay
 for each employee in the file
 
+employees.txt:
+
+{ID} {Name} {rate of pay}
+
+{month}.txt:
+
+{ID} {hours worked}
+
+
+
 Calculating Income Tax:
 	assuming £2,000 monthly income.
 	£2,000 * 12 = £24,000 (annual income)
@@ -35,7 +45,7 @@ TODO:	/  Doing
 		- Potentially make title update automatically to centre with subtitle //
 	* Question Template //
 - Create Main Functions
-	* Welcome Screen /
+	* Welcome Screen //
 	* Find Employee information
 	* Find specified Employee Pay for each month or a specified month
 	* Read from pay file by inputting file name
@@ -62,10 +72,15 @@ int getWidth() {
 	printf("rows: %d\n", rows);
 	return columns;
 }
+
+
+
+
+//Function/Class Definitions ------------------------------------
 class utility;
-//Function Definitions ------------------------------------
+class employee;
 void Payment(utility& util);
-void Info(utility& util);
+void Info(utility& util, std::string content);
 void Welcome(utility& util);
 
 
@@ -75,6 +90,17 @@ void Welcome(utility& util);
 
 
 //Classes -------------------------------------------------W
+class employee {
+public:
+	std::string name;
+	//parse a file and return a matching employee object.
+	employee parse(std::string input) {
+
+	}
+};
+
+
+
 
 //Utility functions e.g. Read, Write
 class utility {
@@ -97,7 +123,7 @@ Good:                   Too Low:                   Too High:
 |                |      |                |       |-               |
  ----------------        ----------------         ----------------
 )";
-		int answer = this->Menu("Window Size", "Configure the Window Size, Current Window Size: " + std::to_string(this->windowSize), "Adjust Window Size\nExamples:\n"+goodbadbad, {"What Would you Like to do ? ", {"Edit"}}, *this);
+		int answer = this->Menu("Window Size", "Configure the Window Size, Current Window Size: " + std::to_string(this->windowSize), "Adjust Window Size\nExamples:\n"+goodbadbad, {"What Would you Like to do ? ", {"Edit"}});
 		switch (answer) {
 		case 0:
 			return;
@@ -198,25 +224,43 @@ Good:                   Too Low:                   Too High:
 	};
 
 	/*
-	Read a text file and return the result
+	Read one a text file and return the result, this function does no parsing and will just return what is exactly in the file
 	Options:
 		filename (string) *Required* - The path to the file you want to read.
 	*/
-	std::string Read(std::string filename, utility& util) {
-		return "";
+	std::string Read(std::string filename) {
+		// read a whole line, including the white space
+		//create variable for the file we are reading
+		std::fstream infile;
+		//and for the string to write the result to
+		std::string str;
+		//write to this and then add to the actual return string
+		std::string buffer;
+		//open the file
+		infile.open(filename);
+		//get the first line in the file
+		while (!infile.eof()) {
+			std::getline(infile, buffer);
+			str += "\n" + buffer;
+		}
+		std::cout << str << std::endl;
+		system("pause");
+		//close the file
+		infile.close();
+		return str;
 	}
-
 	/*
 	Write to a text file and return whether it was successful
 	Options:
 		filename (string) *Required* - The path to the file you want to write to (will create the file if it doesn't exist).
 	*/
-	bool Write(std::string filename, utility& util) {
+	bool Write(std::string filename) {
 		return 0;
 
 	}
 	//Create a divider the size of the window with "-" as the filler
-	void CreateDivider(utility& util) {
+	void CreateDivider() {
+		utility util = *this;
 		std::cout << std::endl << std::setfill('-') << std::setw(util.windowSize - 1) << "-" << std::endl;
 	}
 
@@ -232,9 +276,10 @@ Good:                   Too Low:                   Too High:
 	*/
 
 	
-	int Menu(std::string title, std::string subtitle = "", std::string content = "", Question question = Question(), utility util = utility()) {
+	int Menu(std::string title, std::string subtitle, std::string content, Question question) {
 		//The size of the window (there is a way to get this automatically but it's complex and platform dependent)
 		//the difference between the size of the window and the size of the title in characters
+		utility util = *this;
 		const int windowSizeDiffT = util.windowSize - title.size();
 		const int windowSizeDiffS = util.windowSize - subtitle.size();
 
@@ -246,12 +291,12 @@ Good:                   Too Low:                   Too High:
 		std::cout << std::setfill('-') << std::setw(ceil((windowSizeDiffS - 2) / 2)) << " " << subtitle << " ";
 		std::cout << std::setfill('-') << std::setw(ceil((windowSizeDiffS - 1) / 2)) << "-";
 		if (content != "") {
-			CreateDivider(util);
+			CreateDivider();
 			std::cout << content;
-			CreateDivider(util);
+			CreateDivider();
 		}
 		else {
-			CreateDivider(util);
+			CreateDivider();
 		}
 		return question.ask(util);
 	}
@@ -276,10 +321,16 @@ Good:                   Too Low:                   Too High:
 //---------------------------------------------------------
 
 
+//return a list of employees information including employee id, name and rate of pay
+std::string ViewAll(utility& util) {
+	return util.Read("employees.txt");
+
+}
+
 
 void Payment(utility& util) {
 	system("cls");
-	int answer = util.Menu("Payment Information", "View Payment Information", "", utility::Question(), util);
+	int answer = util.Menu("Payment Information", "View Payment Information", "", utility::Question());
 	switch (answer) {
 	case 0:
 		util.nest--;
@@ -288,22 +339,28 @@ void Payment(utility& util) {
 		util.nest++;
 		Payment(util);
 	}
-	Info(util);
+	Payment(util);
 }
-void Info(utility& util) {
+void Info(utility& util, std::string content) {
 	system("cls");
-	int answer = util.Menu("Employee Information", "View employee information", "", utility::Question(), util);
-	switch (answer) {
+	int answer = util.Menu("Employee Information", "View employee information", content, { "What Would You Like To Do", {"View all", "View a specific Employee"} });
+	switch(answer){
 	case 0:
 		util.nest--;
 		return;
+	//View All
+	case 1:
+		util.nest++;
+		content = ViewAll(util);
+		break;
+
 	}
-	Payment(util);
+	Info(util, content);
 }
 
 void config(utility& util) {
 	system("cls");
-	int answer = util.Menu("Config", "Configure program settings", "", {"What Would you Like to do?", {"Window Size"}}, util);
+	int answer = util.Menu("Config", "Configure program settings", "", {"What Would you Like to do?", {"Window Size"}});
 	switch (answer) {
 	case 0:
 		util.nest--;
@@ -318,7 +375,7 @@ void config(utility& util) {
 }
 void Welcome(utility& util) {
 	system("cls");
-	int answer = util.Menu("Welcome!", "Welcome to the payroll system!", "The payroll system will contain all the information for an employee and their pay including income tax", { "What Would You Like To Do?", { "View Payment Information", "View Employee Information", "Configure"}}, util);
+	int answer = util.Menu("Welcome!", "Welcome to the payroll system!", "The payroll system will contain all the information for an employee and their pay including income tax", { "What Would You Like To Do?", { "View Payment Information", "View Employee Information", "Configure"}});
 	switch (answer) {
 		//case 0 is back or quit
 	case 0:
@@ -330,7 +387,7 @@ void Welcome(utility& util) {
 		break;
 	case 2:
 		util.nest++;
-		Info(util);
+		Info(util, "Information will appear here");
 		break;
 	case 3:
 		util.nest++;
