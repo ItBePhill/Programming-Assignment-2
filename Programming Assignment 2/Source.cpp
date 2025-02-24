@@ -288,7 +288,7 @@ void Payment(utility& util) {
 		util.nest++;
 		Payment(util);
 	}
-	Info(util);
+	Payment(util);
 }
 void Info(utility& util) {
 	system("cls");
