@@ -1,12 +1,15 @@
 ﻿#include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <sstream>
 #include <vector>
 #include <string>
 #include <windows.h>
-
+using std::string;
+using std::vector;
 /*
 Programming Assignment 2 - Payroll System - Phillip Wood
+Note: Windows Only
 Description of Program:
 Read and Display the contents of "Pay Files"
 These Files will contain information like
@@ -35,8 +38,8 @@ Calculating Income Tax:
 
 
 /*
-TODO:	/  Doing
-		// Done
+TODO:	/  Not Finished
+		// Finished
 
 - Create Utility functions /
 	* Read Text 
@@ -46,7 +49,7 @@ TODO:	/  Doing
 	* Question Template //
 - Create Main Functions
 	* Welcome Screen //
-	* Find Employee information
+	* Find Employee information /
 	* Find specified Employee Pay for each month or a specified month
 	* Read from pay file by inputting file name
 	* Write employees id number and monthly pay before tax deduction to a file called '{file}_output.txt'
@@ -67,20 +70,17 @@ int getWidth() {
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
 	columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 	rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
-
-	printf("columns: %d\n", columns);
-	printf("rows: %d\n", rows);
 	return columns;
 }
 
 
 
 
-//Function/Class Definitions ------------------------------------
+//Function/Class Declarations -----------------------------
 class utility;
 class employee;
 void Payment(utility& util);
-void Info(utility& util, std::string content);
+void Info(utility& util, string content);
 void Welcome(utility& util);
 
 
@@ -89,31 +89,40 @@ void Welcome(utility& util);
 //---------------------------------------------------------
 
 
-//Classes -------------------------------------------------W
+//Classes -------------------------------------------------
+
+//Employee class hold info on an employee including name ID and pay
 class employee {
 public:
-	std::string name;
-	//parse a file and return a matching employee object.
-	employee parse(std::string input) {
+	string name;
+	string ID;
+	double pay;
 
+
+	employee(string name, string ID, double pay) : name(name), ID(ID), pay(pay) {
+		this->name = name;
+		this->ID = ID;
+		this->pay = pay;
 	}
 };
-
 
 
 
 //Utility functions e.g. Read, Write
 class utility {
 public:
-	//The amount of nested menus the user is currently in;
+	//The amount of nested menus the user is currently in
 	int nest = 0;
 	//The size of the window
 	int windowSize = 119;
+	int windowSizeTemp = 0;
+	string answerStr;
+	int answer = 0;
 	//Adjust window size
 	void windowSizeConfig() {
 		system("cls");
 		//examples for good and bad window sizes
-		std::string goodbadbad =
+		string goodbadbad =
 R"( 
 Good:                   Too Low:                   Too High:       
  ----------------        ----------------         ----------------   
@@ -123,16 +132,14 @@ Good:                   Too Low:                   Too High:
 |                |      |                |       |-               |
  ----------------        ----------------         ----------------
 )";
-		int answer = this->Menu("Window Size", "Configure the Window Size, Current Window Size: " + std::to_string(this->windowSize), "Adjust Window Size\nExamples:\n"+goodbadbad, {"What Would you Like to do ? ", {"Edit"}});
+		int answer = this->Menu("Window Size", "Configure the Window Size, Current Window Size: " + std::to_string(this->windowSize), "Adjust Window Size\nExamples:\n"+goodbadbad, {"What Would you Like to do ? ", {"Edit", "Auto"}});
 		switch (answer) {
 		case 0:
 			return;
-
+			break;
 		case 1:
 			system("cls");
 			std::cout << "Enter a Number above 0 (decimals will be rounded up), Current Window Size: " << std::to_string(this->windowSize) << "\n- ";
-			std::string answerStr;
-			int answer = 0;
 			while (answer == 0) {
 				std::getline(std::cin, answerStr);
 				answer = strtol(answerStr.c_str(), NULL, 0);
@@ -142,12 +149,19 @@ Good:                   Too Low:                   Too High:
 					answer = 0;
 					continue;
 				}
-				
+
 			}
-			std::cout << "Window Size was changed from: " << this->windowSize << "to: " << answer;
-			this->windowSize = answer;
+			std::cout << "Setting Window Size from: " << this->windowSize << "to: " << answer;
+			windowSizeTemp = answer;
+			break;
+		case 2:
+			std::cout << "Automatically finding the Window Size...\n";
+			windowSizeTemp = getWidth();
+			std::cout << "Found size {" << windowSizeTemp << "}\n";
+			system("pause");
 			break;
 		} 
+		this->windowSize = windowSizeTemp;
 		windowSizeConfig();
 	}
 	/*
@@ -163,10 +177,10 @@ Good:                   Too Low:                   Too High:
 	*/
 	class Question {
 	public:
-		std::string title = "What Would You Like To Do?";
-		std::vector<std::string> options;
+		string title = "What Would You Like To Do?";
+		vector<string> options;
 		//options will by default have a back option
-		Question(std::string title = "What Would you Like to do?", std::vector<std::string> options = { "Back" }) : title(title), options(options) {
+		Question(string title = "What Would you Like to do?", vector<string> options = { "Back" }) : title(title), options(options) {
 			this->title = title;
 			this->options = options;
 		}
@@ -190,7 +204,7 @@ Good:                   Too Low:                   Too High:
 			}
 
 			//get user input
-			std::string inputstr;
+			string inputstr;
 			int inputint = 0;
 			//loop until we get an answer
 			while (inputint == 0) {
@@ -228,14 +242,14 @@ Good:                   Too Low:                   Too High:
 	Options:
 		filename (string) *Required* - The path to the file you want to read.
 	*/
-	std::string Read(std::string filename) {
+	string Read(string filename) {
 		// read a whole line, including the white space
 		//create variable for the file we are reading
 		std::fstream infile;
 		//and for the string to write the result to
-		std::string str;
+		string str;
 		//write to this and then add to the actual return string
-		std::string buffer;
+		string buffer;
 		//open the file
 		infile.open(filename);
 		//get the first line in the file
@@ -243,8 +257,6 @@ Good:                   Too Low:                   Too High:
 			std::getline(infile, buffer);
 			str += "\n" + buffer;
 		}
-		std::cout << str << std::endl;
-		system("pause");
 		//close the file
 		infile.close();
 		return str;
@@ -254,32 +266,36 @@ Good:                   Too Low:                   Too High:
 	Options:
 		filename (string) *Required* - The path to the file you want to write to (will create the file if it doesn't exist).
 	*/
-	bool Write(std::string filename) {
+	bool Write(string filename) {
 		return 0;
 
 	}
 	//Create a divider the size of the window with "-" as the filler
-	void CreateDivider() {
+	string CreateDivider(int size = -1, char divider = '-') {
 		utility util = *this;
-		std::cout << std::endl << std::setfill('-') << std::setw(util.windowSize - 1) << "-" << std::endl;
+		if (size == -1) {
+			size = util.windowSize;
+		}
+		std::stringstream ss;
+		ss << std::setfill(divider) << std::setw(size) << "-";
+		return ss.str();
 	}
 
 	/*
-	Create and Show the user a standardised menu, content and question are technically optional but you should probably use at least one
+	Create and Show the user a standardised menu
 	Options:
 		title (string) *Required* - The Title of the menu e.g. Welcome
 		subtitle (string) *Optional* - a subtitle displayed under the title, could be useful for nested menus
-		content (string) *Optional* - Content in the menu e.g. could be a paragraph or just a sentence
-		question *Optional* - A Question to ask the user, e.g. what menu to move to
-		utility is technically optional, but in reality it is not and you need to pass utility in.
+		content (string) *Optional* - Content in the menu e.g. could be a paragraph or just a sentence, won't default but isn't required for menu to function as a back answer is added automatically
+		question *Optional* - A Question to ask the user, e.g. what menu to move to, won't default but isn't required for menu to function as a back answer is added automatically
 	There will always be a back option in the question so no need to add one
 	*/
 
 	
-	int Menu(std::string title, std::string subtitle, std::string content, Question question) {
-		//The size of the window (there is a way to get this automatically but it's complex and platform dependent)
-		//the difference between the size of the window and the size of the title in characters
+	int Menu(string title, string subtitle, string content, Question question) {
 		utility util = *this;
+		//The size of the window
+		//the difference between the size of the window and the size of the title in characters
 		const int windowSizeDiffT = util.windowSize - title.size();
 		const int windowSizeDiffS = util.windowSize - subtitle.size();
 
@@ -291,12 +307,12 @@ Good:                   Too Low:                   Too High:
 		std::cout << std::setfill('-') << std::setw(ceil((windowSizeDiffS - 2) / 2)) << " " << subtitle << " ";
 		std::cout << std::setfill('-') << std::setw(ceil((windowSizeDiffS - 1) / 2)) << "-";
 		if (content != "") {
-			CreateDivider();
+			std::cout << "\n" << CreateDivider() << "\n";
 			std::cout << content;
-			CreateDivider();
+			std::cout << "\n" << CreateDivider() << "\n";
 		}
 		else {
-			CreateDivider();
+			std::cout << "\n" << CreateDivider() << "\n";
 		}
 		return question.ask(util);
 	}
@@ -320,11 +336,81 @@ Good:                   Too Low:                   Too High:
 
 //---------------------------------------------------------
 
+vector<employee> getEmployees(utility& util) {
+	/*
+	format of original output:
+	"
+	ID Name Pay\n
+	ID Name Pay
+	"
+	*/
+	string output = util.Read("employees.txt");
+	/*
+	Format of middle output:
+	{"ID Name Pay"},
+	{"ID Name Pay"}
+	*/
+	vector<string> outputarrtemp;
+	/*
+	Format of final output:
+	{ {ID}, {Name}, {Pay} },
+	{ {ID}, {Name}, {Pay} }
+	*/
+	vector<employee> outputarr;
+	
+	//parse the output
+	//split the output into an array of three indexes for ID, name and pay rate
+	string token;
+	vector<string> outputarrcomp;
+	//split output string into each employee
+	std::istringstream ss(output);
+	while (std::getline(ss, token, '\n')) {
+		outputarrtemp.push_back(token);
+	}
+
+	//split output strings in array into each component
+	//for each string in the array split into into each component
+	for (string i : outputarrtemp) {
+		std::istringstream ss(i);
+		while (std::getline(ss, token, ' ')) {
+			//add each component
+			outputarrcomp.push_back(token);
+		}
+		std::cout << outputarrcomp.size();
+		if (outputarrcomp.size() >= 3) {
+			outputarr.push_back(employee(outputarrcomp[1], outputarrcomp[0], strtod(outputarrcomp[2].c_str(), NULL)));
+		}
+		outputarrcomp.clear();
+	}
+	return outputarr;
+}
+
+
 
 //return a list of employees information including employee id, name and rate of pay
-std::string ViewAll(utility& util) {
-	return util.Read("employees.txt");
+string ViewAllInfo(utility& util) {
+	
+	vector<employee> employees = getEmployees(util);
+	std::stringstream returnout;
+	//Create table
+	returnout << "\n\n";
+	//values were chosen semi-randomly so if they don't make any sense that's why
+	returnout << std::left;
+	returnout << std::setw(9) << "[ID]" << std::setw(15) << "[Name]" << std::setw(9) << "[Rate of Pay]\n";
+	returnout << util.CreateDivider(util.windowSize/3) << "\n";
+	for (auto i : employees) {
+		returnout << std::setw(9) << i.ID << std::setw(15) << i.name << std::setw(9) << std::setprecision(4) << i.pay << "\n" << util.CreateDivider(util.windowSize/3) << "\n";
+	}
+	return returnout.str();
+}
 
+
+//get the 
+string ViewSingleInfo(utility &util, string ID) {
+	string returnout;
+	
+	
+	return returnout;
 }
 
 
@@ -341,7 +427,7 @@ void Payment(utility& util) {
 	}
 	Payment(util);
 }
-void Info(utility& util, std::string content) {
+void Info(utility& util, string content) {
 	system("cls");
 	int answer = util.Menu("Employee Information", "View employee information", content, { "What Would You Like To Do", {"View all", "View a specific Employee"} });
 	switch(answer){
@@ -351,7 +437,7 @@ void Info(utility& util, std::string content) {
 	//View All
 	case 1:
 		util.nest++;
-		content = ViewAll(util);
+		content = ViewAllInfo(util);
 		break;
 
 	}
