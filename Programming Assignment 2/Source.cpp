@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <windows.h>
+#include <random>
 using std::string;
 using std::vector;
 /*
@@ -49,7 +50,7 @@ TODO:	/  Not Finished
 	* Question Template //
 - Create Main Functions
 	* Welcome Screen //
-	* Find Employee information /
+	* Find Employee information //
 	* Find specified Employee Pay for each month or a specified month
 	* Read from pay file by inputting file name
 	* Write employees id number and monthly pay before tax deduction to a file called '{file}_output.txt'
@@ -79,7 +80,7 @@ int getWidth() {
 //Function/Class Declarations -----------------------------
 class utility;
 class employee;
-void Payment(utility& util);
+void Payment(utility& util, string content);
 void Info(utility& util, string content);
 void Welcome(utility& util);
 
@@ -226,6 +227,7 @@ Good:                   Too Low:                   Too High:
 						//it is
 						return 0;
 					}
+					//it's not
 					else {
 						return inputint;
 					}
@@ -300,12 +302,13 @@ Good:                   Too Low:                   Too High:
 		const int windowSizeDiffS = util.windowSize - subtitle.size();
 
 		//Create Menu
-		//Display Title
+		//Display Title / create menu headers
 		std::cout << std::setfill('=') << std::setw(ceil((windowSizeDiffT - 2) / 2)) << " " << title << " ";
 		std::cout << std::setfill('=') << std::setw(ceil((windowSizeDiffT - 1) / 2 )) << "=";
 		std::cout << "\n";
 		std::cout << std::setfill('-') << std::setw(ceil((windowSizeDiffS - 2) / 2)) << " " << subtitle << " ";
 		std::cout << std::setfill('-') << std::setw(ceil((windowSizeDiffS - 1) / 2)) << "-";
+		//show content
 		if (content != "") {
 			std::cout << "\n" << CreateDivider() << "\n";
 			std::cout << content;
@@ -314,6 +317,7 @@ Good:                   Too Low:                   Too High:
 		else {
 			std::cout << "\n" << CreateDivider() << "\n";
 		}
+		//return the question
 		return question.ask(util);
 	}
 
@@ -335,7 +339,7 @@ Good:                   Too Low:                   Too High:
 
 
 //---------------------------------------------------------
-
+//Get a list of employees
 vector<employee> getEmployees(utility& util) {
 	/*
 	format of original output:
@@ -387,6 +391,32 @@ vector<employee> getEmployees(utility& util) {
 
 
 
+//get a single employees payment info
+string ViewSinglePayment(utility& util, string ID) {
+	std::stringstream returnout;
+	employee chosen("", "", 0.0);
+	vector<employee> employees = getEmployees(util);
+	returnout << "View Employee {" << ID << "}";
+	return returnout.str();
+}
+
+//return a list of employees information including employee id, name and rate of pay
+string ViewAllPayment(utility& util, string Month) {
+
+	vector<employee> employees = getEmployees(util);
+	std::stringstream returnout;
+	returnout << "View Month {" << Month << "}";
+	return returnout.str();
+}
+//return a list of employees information including employee id, name and rate of pay
+string ViewPaymentFile(utility& util, string filename) {
+	vector<employee> employees = getEmployees(util);
+	std::stringstream returnout;
+	returnout << "View File {" << filename << "}";
+	return returnout.str();
+}
+
+
 //return a list of employees information including employee id, name and rate of pay
 string ViewAllInfo(utility& util) {
 	
@@ -405,27 +435,51 @@ string ViewAllInfo(utility& util) {
 }
 
 
-//get the 
+//get a single employees information
 string ViewSingleInfo(utility &util, string ID) {
-	string returnout;
-	
-	
-	return returnout;
+	std::stringstream returnout;
+	employee chosen("","",0.0);
+	//get all employees
+	vector<employee> employees = getEmployees(util);
+	for (auto i : employees) {
+		if (i.ID == ID or i.name == ID) {
+			chosen = i;
+		}
+	}
+	//employee has no name so must not exist
+	if (chosen.name == "") {
+		return "Chosen employee doesn't exist!";
+	}
+	returnout << std::left;
+	returnout << std::setw(9) << "[ID]" << std::setw(15) << "[Name]" << std::setw(9) << "[Rate of Pay]\n";
+	returnout << util.CreateDivider(util.windowSize / 3) << "\n";
+	returnout << std::setw(9) << chosen.ID << std::setw(15) << chosen.name << std::setw(9) << std::setprecision(4) << chosen.pay << "\n" << util.CreateDivider(util.windowSize / 3) << "\n";
+	return returnout.str();
 }
 
 
-void Payment(utility& util) {
+void Payment(utility& util, string content) {
 	system("cls");
-	int answer = util.Menu("Payment Information", "View Payment Information", "", utility::Question());
+	int answer = util.Menu("Payment Information", "View Payment Information", content, { "What Would You Like to do?", {"View Payment Info for an Employee", "View all information for a month", "View information from a file"} });
 	switch (answer) {
 	case 0:
 		util.nest--;
 		return;
 	case 1:
-		util.nest++;
-		Payment(util);
+		std::cout << "Employee";
+		content = ViewSinglePayment(util, "employee");
+		break;
+	case 2:
+		std::cout << "Month";
+		content = ViewAllPayment(util, "month");
+		break;
+	case 3:
+		std::cout << "File";
+		content = ViewPaymentFile(util, "file");
+		break;
+	
 	}
-	Payment(util);
+	Payment(util, content);
 }
 void Info(utility& util, string content) {
 	system("cls");
@@ -439,6 +493,12 @@ void Info(utility& util, string content) {
 		util.nest++;
 		content = ViewAllInfo(util);
 		break;
+	case 2:
+		util.nest++;
+		string id;
+		std::cout << "Please input the ID or name of the employee (case sensitive)\n- ";
+		std::getline(std::cin, id);
+		content = ViewSingleInfo(util, id);
 
 	}
 	Info(util, content);
@@ -461,7 +521,29 @@ void config(utility& util) {
 }
 void Welcome(utility& util) {
 	system("cls");
-	int answer = util.Menu("Welcome!", "Welcome to the payroll system!", "The payroll system will contain all the information for an employee and their pay including income tax", { "What Would You Like To Do?", { "View Payment Information", "View Employee Information", "Configure"}});
+	std::vector <std::string> messages = {"Live Long and Prosper!", "Hey you you're finally awake!", "Keep the change, ya filthy animal!!", "Also try Minecraft!!", "Han didn't shoot first!!", "I guess you guys aren't ready for that yet. But your kids are gonna love it!", "When you get to Hell, Tell 'em Viper sent you!", "If my grandmother had wheels she would have been a bike!", "Well excuse me, princess!", "Also try Terraria!", "Not on Steam!", "As seen on TV!"};
+	//Taken from: 
+	//https://stackoverflow.com/questions/3418231/replace-part-of-a-string-with-another-string
+	//https://www.geeksforgeeks.org/how-to-generate-random-number-in-range-in-cpp/
+	//and my previous assignment
+	//Generates a random number to be used to show a splash message
+	
+	int min = 0;
+	int max = messages.size()-1;
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> distrib(min, max);
+	//---------------------------------------------------------
+	string splash = "{splash}\n" + util.CreateDivider();
+	string content = splash + "The payroll system will contain all the information for an employee and their pay including income tax";
+	//replace {splash} with a random message chosen by random number generator above
+	int randomint = distrib(gen);
+
+	content.replace(content.find("{splash}"), sizeof("{splash}") - 1, messages[randomint]);
+
+	
+	
+	int answer = util.Menu("Welcome!", "Welcome to the payroll system!", content, { "What Would You Like To Do?", { "View Payment Information", "View Employee Information", "Configure"}});
 	switch (answer) {
 		//case 0 is back or quit
 	case 0:
@@ -469,7 +551,7 @@ void Welcome(utility& util) {
 		return;
 	case 1:
 		util.nest++;
-		Payment(util);
+		Payment(util, "Information will appear here");
 		break;
 	case 2:
 		util.nest++;
@@ -489,8 +571,6 @@ The main function will call other helper functions
 which will do the actual calculations and other stuff
 */
 int main() {
-	
-
 	std::cout << "- WARNING -\nResizing Window smaller than default may cause menus to break\n";
 	system("pause");
 	std::cout << "\n";
