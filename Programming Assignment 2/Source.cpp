@@ -42,8 +42,11 @@ Calculating Income Tax:
 TODO:	/  Not Finished
 		// Finished
 
+- Bugs
+	* Edit Window Size doesn't clear console
+
 - Create Utility functions /
-	* Read Text 
+	* Read Text //
 	* Write Text 
 	* Menu Template //
 		- Potentially make title update automatically to centre with subtitle //
@@ -51,9 +54,9 @@ TODO:	/  Not Finished
 - Create Main Functions
 	* Welcome Screen //
 	* Find Employee information //
-	* Find specified Employee Pay for each month or a specified month
+	* Find specified Employee Pay for each month or a specified month /
 	* Read from pay file by inputting file name
-	* Write employees id number and monthly pay before tax deduction to a file called '{file}_output.txt'
+	* Write employees id number and monthly pay before tax deduction to a file called '{month_file}_output.txt' /
 	* Record error in a pay file by adding it to a file called errors.txt in format {name of file} {error description}
 
 
@@ -140,7 +143,7 @@ Good:                   Too Low:                   Too High:
 			break;
 		case 1:
 			system("cls");
-			std::cout << "Enter a Number above 0 (decimals will be rounded up), Current Window Size: " << std::to_string(this->windowSize) << "\n- ";
+			std::cout << "Enter a Whole Number above 0, Current Window Size: " << std::to_string(this->windowSize) << "\n- ";
 			while (answer == 0) {
 				std::getline(std::cin, answerStr);
 				answer = strtol(answerStr.c_str(), NULL, 0);
@@ -156,6 +159,7 @@ Good:                   Too Low:                   Too High:
 			windowSizeTemp = answer;
 			break;
 		case 2:
+			system("cls");
 			std::cout << "Automatically finding the Window Size...\n";
 			windowSizeTemp = getWidth();
 			std::cout << "Found size {" << windowSizeTemp << "}\n";
@@ -303,19 +307,17 @@ Good:                   Too Low:                   Too High:
 
 		//Create Menu
 		//Display Title / create menu headers
-		std::cout << std::setfill('=') << std::setw(ceil((windowSizeDiffT - 2) / 2)) << " " << title << " ";
-		std::cout << std::setfill('=') << std::setw(ceil((windowSizeDiffT - 1) / 2 )) << "=";
-		std::cout << "\n";
-		std::cout << std::setfill('-') << std::setw(ceil((windowSizeDiffS - 2) / 2)) << " " << subtitle << " ";
-		std::cout << std::setfill('-') << std::setw(ceil((windowSizeDiffS - 1) / 2)) << "-";
+		std::cout << std::setfill('=') << std::setw(ceil((windowSizeDiffT - 1) / 2)) << " " << title << " " << std::setfill('=') << std::setw(ceil((windowSizeDiffT) / 2 )) << "=";
+		std::cout << std::endl;
+		std::cout << std::setfill('=') << std::setw(ceil((windowSizeDiffS - 1) / 2)) << " " << subtitle << " " << std::setfill('=') << std::setw(ceil((windowSizeDiffS) / 2)) << "=";
 		//show content
 		if (content != "") {
-			std::cout << "\n" << CreateDivider() << "\n";
+			std::cout << std::endl << CreateDivider() << std::endl;
 			std::cout << content;
-			std::cout << "\n" << CreateDivider() << "\n";
+			std::cout << std::endl << CreateDivider() << std::endl;
 		}
 		else {
-			std::cout << "\n" << CreateDivider() << "\n";
+			std::cout << std::endl << CreateDivider() << std::endl;
 		}
 		//return the question
 		return question.ask(util);
@@ -395,8 +397,22 @@ vector<employee> getEmployees(utility& util) {
 string ViewSinglePayment(utility& util, string ID) {
 	std::stringstream returnout;
 	employee chosen("", "", 0.0);
+	//get all employees
 	vector<employee> employees = getEmployees(util);
-	returnout << "View Employee {" << ID << "}";
+	for (auto i : employees) {
+		if (i.ID == ID or i.name == ID) {
+			chosen = i;
+		}
+	}
+	//employee has no name so must not exist
+	if (chosen.name == "") {
+		return "Chosen employee doesn't exist!";
+	}
+	returnout << std::left;
+	returnout << std::setw(11) << "[ID]" << std::setw(11) << "[Name]" << std::setw(11) << "[Pay Rate]" << std::setw(15) << "[Hours Worked]" << std::setw(27) << "[Monthly Pay (Before Tax)]" << std::setw(27) << "[Monthly Pay (After Tax)]" << std::endl;
+	returnout << util.CreateDivider() << std::endl;
+	returnout << std::setw(11) << chosen.ID << std::setw(11) << chosen.name << std::setw(11) << std::setprecision(4) << chosen.pay << std::setw(15) << 0 << std::setw(27) << 0 << std::setw(27) << 0 << std::endl << util.CreateDivider();
+
 	return returnout.str();
 }
 
@@ -419,17 +435,15 @@ string ViewPaymentFile(utility& util, string filename) {
 
 //return a list of employees information including employee id, name and rate of pay
 string ViewAllInfo(utility& util) {
-	
 	vector<employee> employees = getEmployees(util);
 	std::stringstream returnout;
 	//Create table
 	returnout << "\n\n";
-	//values were chosen semi-randomly so if they don't make any sense that's why
 	returnout << std::left;
-	returnout << std::setw(9) << "[ID]" << std::setw(15) << "[Name]" << std::setw(9) << "[Rate of Pay]\n";
-	returnout << util.CreateDivider(util.windowSize/3) << "\n";
+	returnout << std::setw(5) << "[ID]" << std::setw(5) << "[Name]" << std::setw(5) << "[Rate of Pay]\n";
+	returnout << util.CreateDivider(util.windowSize/3) << std::endl;
 	for (auto i : employees) {
-		returnout << std::setw(9) << i.ID << std::setw(15) << i.name << std::setw(9) << std::setprecision(4) << i.pay << "\n" << util.CreateDivider(util.windowSize/3) << "\n";
+		returnout << std::setw(i.ID.size() + 5) << i.ID << std::setw(i.name.size() + 5) << i.name << std::setw(std::to_string(i.pay).size() + 5) << std::setprecision(4) << i.pay << std::endl << util.CreateDivider();
 	}
 	return returnout.str();
 }
@@ -451,29 +465,28 @@ string ViewSingleInfo(utility &util, string ID) {
 		return "Chosen employee doesn't exist!";
 	}
 	returnout << std::left;
-	returnout << std::setw(9) << "[ID]" << std::setw(15) << "[Name]" << std::setw(9) << "[Rate of Pay]\n";
-	returnout << util.CreateDivider(util.windowSize / 3) << "\n";
-	returnout << std::setw(9) << chosen.ID << std::setw(15) << chosen.name << std::setw(9) << std::setprecision(4) << chosen.pay << "\n" << util.CreateDivider(util.windowSize / 3) << "\n";
+	returnout << std::setw(chosen.ID.size() + 5) << "[ID]" << std::setw(chosen.name.size() + 5) << "[Name]" << std::setw(std::to_string(chosen.pay).size() + 5) << "[Rate of Pay]\n";
+	returnout << util.CreateDivider() << std::endl;
+	returnout << std::setw(chosen.ID.size() + 5) << chosen.ID << std::setw(chosen.name.size() + 5) << chosen.name << std::setw(std::to_string(chosen.pay).size() + 5) << std::setprecision(4) << chosen.pay << std::endl << util.CreateDivider();
 	return returnout.str();
 }
 
 
 void Payment(utility& util, string content) {
 	system("cls");
-	int answer = util.Menu("Payment Information", "View Payment Information", content, { "What Would You Like to do?", {"View Payment Info for an Employee", "View all information for a month", "View information from a file"} });
+	int answer = util.Menu("Payment Information", "View Payment Information", content, { "What Would You Like to do?", {"View Payment Info for an Employee", "View information from a month file"} });
 	switch (answer) {
 	case 0:
 		util.nest--;
 		return;
-	case 1:
-		std::cout << "Employee";
-		content = ViewSinglePayment(util, "employee");
-		break;
+	case 1: {
+			string id;
+			std::cout << "Please input the ID or name of the employee (case sensitive)\n- ";
+			std::getline(std::cin, id);
+			content = ViewSinglePayment(util, id);
+			break;
+		}
 	case 2:
-		std::cout << "Month";
-		content = ViewAllPayment(util, "month");
-		break;
-	case 3:
 		std::cout << "File";
 		content = ViewPaymentFile(util, "file");
 		break;
@@ -490,16 +503,16 @@ void Info(utility& util, string content) {
 		return;
 	//View All
 	case 1:
-		util.nest++;
 		content = ViewAllInfo(util);
 		break;
-	case 2:
-		util.nest++;
+	//View Single
+	case 2: {
 		string id;
 		std::cout << "Please input the ID or name of the employee (case sensitive)\n- ";
 		std::getline(std::cin, id);
 		content = ViewSingleInfo(util, id);
-
+		break;
+	}
 	}
 	Info(util, content);
 }
@@ -573,7 +586,7 @@ which will do the actual calculations and other stuff
 int main() {
 	std::cout << "- WARNING -\nResizing Window smaller than default may cause menus to break\n";
 	system("pause");
-	std::cout << "\n";
+	std::cout << std::endl;
 	utility util = utility();
 	util.windowSize = getWidth();
 	Welcome(util);
