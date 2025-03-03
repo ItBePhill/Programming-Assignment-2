@@ -9,7 +9,7 @@
 
 //tabulate library: https://github.com/p-ranav/tabulate/releases/tag/v1.5
 //created by: Pranav
-#include "tabulate.hpp";
+#include "tabulate.hpp"
 using std::string;
 using std::vector;
 using std::to_string;
@@ -59,7 +59,7 @@ TODO:	/  Not Finished
 - Create Main Functions
 	* Welcome Screen //
 	* Find Employee information //
-	* Find specified Employee Pay for each month or a specified month /
+	* Find specified Employee Pay for each month /
 	* Read from pay file by inputting file name /
 	* Write employees id number and monthly pay before tax deduction to a file called '{month_file}_output.txt' /
 	* Record error in a pay file by adding it to a file called errors.txt in format {name of file} {error description}
@@ -72,10 +72,9 @@ TODO:	/  Not Finished
 Code Taken from : https://stackoverflow.com/questions/6812224/getting-terminal-size-in-c-for-windows/12642749#12642749
 Only works on windows but there is a Linux version available 
 */
-int getWidth() {
+static int getWidth() {
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	int columns, rows;
-
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
 	columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 	rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
@@ -100,7 +99,7 @@ void Welcome(utility& util);
 
 //Classes -------------------------------------------------
 
-//Employee class hold info on an employee including name ID and pay
+//Employee class hold info on an employee including name, ID, pay and hours worked
 class employee {
 public:
 	string name;
@@ -283,7 +282,7 @@ Good:                   Too Low:                   Too High:
 
 	}
 	//Create a divider the size of the window with "-" as the filler
-	string CreateDivider(int size = -1, char divider = '-') {
+	const string CreateDivider(int size = -1, char divider = '-') {
 		utility util = *this;
 		if (size == -1) {
 			size = util.windowSize;
@@ -348,7 +347,7 @@ Good:                   Too Low:                   Too High:
 
 //---------------------------------------------------------
 //Get a list of employees
-vector<employee> getEmployees(utility& util) {
+static vector<employee> getEmployees(utility& util) {
 	/*
 	format of original output:
 	"
@@ -401,13 +400,13 @@ vector<employee> getEmployees(utility& util) {
 
 //get a single employees payment info
 
-//TODO Get the hours worked for employee(s) in specified month
-string ViewSinglePayment(utility& util, string ID, string month) {
+//TODO Get the hours worked for employee for each month and add it to row
+static string ViewSinglePayment(utility& util, string ID) {
 	std::stringstream returnout;
 	employee chosen("", "", 0.0);
 	//get all employees
 	vector<employee> employees = getEmployees(util);
-	for (auto i : employees) {
+	for (employee i : employees) {
 		if (i.ID == ID or i.name == ID) {
 			chosen = i;
 		}
@@ -427,14 +426,15 @@ string ViewSinglePayment(utility& util, string ID, string month) {
 }
 
 //return a list of payment information for a specified month including employee id, name, rate of pay, hours worked, monthly pay before and after tax;
-string ViewPaymentFile(utility& util, string filename) {
+//TODO: Get Hours worked for each employee;
+static string ViewPaymentFile(utility& util, string filename) {
 	//get all employees in order to get pay rate, name and ID
 	vector<employee> employees = getEmployees(util);
 	//Create table
 	tabulate::Table table;
 	std::stringstream payFormat;
 	table.add_row({ "Name", "ID", "Rate of Pay", "Hours Worked", "Monthly Pay (Before Tax)", "Monthly Pay (After Tax)" });
-	for (auto i : employees) {
+	for (employee i : employees) {
 		payFormat = std::stringstream();
 		payFormat << std::setprecision(4) << i.pay;
 		table.add_row({ i.name, i.ID, payFormat.str(), "0", "0", "0" });
@@ -444,14 +444,14 @@ string ViewPaymentFile(utility& util, string filename) {
 
 
 //return a list of employees information including employee id, name and rate of pay
-string ViewAllInfo(utility& util) {
+static string ViewAllInfo(utility& util) {
 	vector<employee> employees = getEmployees(util);
 	std::stringstream returnout;
 	//Create table
 	tabulate::Table table;
 	std::stringstream payFormat;
 	table.add_row({ "Name", "ID", "Rate of Pay"});
-	for (auto i : employees) {
+	for (employee i : employees) {
 		payFormat = std::stringstream();
 		payFormat << std::setprecision(4) << i.pay;
 		table.add_row({i.name, i.ID, payFormat.str()});
@@ -461,12 +461,12 @@ string ViewAllInfo(utility& util) {
 
 
 //get a single employees information
-string ViewSingleInfo(utility &util, string ID) {
+static string ViewSingleInfo(utility &util, string ID) {
 	std::stringstream returnout;
 	employee chosen("","",0.0);
 	//get all employees
 	vector<employee> employees = getEmployees(util);
-	for (auto i : employees) {
+	for (employee i : employees) {
 		if (i.ID == ID or i.name == ID) {
 			chosen = i;
 		}
@@ -496,10 +496,7 @@ void Payment(utility& util, string content) {
 			string id;
 			std::cout << "Please input the ID or name of the employee (case sensitive)\n- ";
 			std::getline(std::cin, id);
-			string file;
-			std::cout << "Please input filename of the month (case sensitive)\n- ";
-			std::getline(std::cin, file);
-			content = ViewSinglePayment(util, id, file);
+			content = ViewSinglePayment(util, id);
 			break;
 		}
 	case 2:
@@ -535,7 +532,7 @@ void Info(utility& util, string content) {
 	Info(util, content);
 }
 
-void config(utility& util) {
+static void config(utility& util) {
 	system("cls");
 	int answer = util.Menu("Config", "Configure program settings", "", {"What Would you Like to do?", {"Window Size"}});
 	switch (answer) {
