@@ -6,8 +6,13 @@
 #include <string>
 #include <windows.h>
 #include <random>
+
+//tabulate library: https://github.com/p-ranav/tabulate/releases/tag/v1.5
+//created by: Pranav
+#include "tabulate.hpp";
 using std::string;
 using std::vector;
+using std::to_string;
 /*
 Programming Assignment 2 - Payroll System - Phillip Wood
 Note: Windows Only
@@ -43,7 +48,7 @@ TODO:	/  Not Finished
 		// Finished
 
 - Bugs
-	* Edit Window Size doesn't clear console
+	* Edit Window Size doesn't clear console //
 
 - Create Utility functions /
 	* Read Text //
@@ -55,7 +60,7 @@ TODO:	/  Not Finished
 	* Welcome Screen //
 	* Find Employee information //
 	* Find specified Employee Pay for each month or a specified month /
-	* Read from pay file by inputting file name
+	* Read from pay file by inputting file name /
 	* Write employees id number and monthly pay before tax deduction to a file called '{month_file}_output.txt' /
 	* Record error in a pay file by adding it to a file called errors.txt in format {name of file} {error description}
 
@@ -101,9 +106,10 @@ public:
 	string name;
 	string ID;
 	double pay;
+	double hours;
 
 
-	employee(string name, string ID, double pay) : name(name), ID(ID), pay(pay) {
+	employee(string name, string ID, double pay, double hours = 0.0) : name(name), ID(ID), pay(pay), hours(hours) {
 		this->name = name;
 		this->ID = ID;
 		this->pay = pay;
@@ -136,27 +142,27 @@ Good:                   Too Low:                   Too High:
 |                |      |                |       |-               |
  ----------------        ----------------         ----------------
 )";
-		int answer = this->Menu("Window Size", "Configure the Window Size, Current Window Size: " + std::to_string(this->windowSize), "Adjust Window Size\nExamples:\n"+goodbadbad, {"What Would you Like to do ? ", {"Edit", "Auto"}});
+		int answer = this->Menu("Window Size", "Configure the Window Size, Current Window Size: " + to_string(this->windowSize), "Adjust Window Size\nExamples:\n"+goodbadbad, {"What Would you Like to do ? ", {"Edit", "Auto"}});
 		switch (answer) {
 		case 0:
 			return;
+			system("cls");
 			break;
 		case 1:
 			system("cls");
-			std::cout << "Enter a Whole Number above 0, Current Window Size: " << std::to_string(this->windowSize) << "\n- ";
-			while (answer == 0) {
+			std::cout << "Enter a Whole Number above 0, Current Window Size: " << to_string(this->windowSize) << "\n- ";
+			while (windowSizeTemp == 0) {
 				std::getline(std::cin, answerStr);
-				answer = strtol(answerStr.c_str(), NULL, 0);
+				windowSizeTemp = strtol(answerStr.c_str(), NULL, 0);
 				//user either inputted an incorrect number or a letter
-				if (answer <= 0) {
+				if (windowSizeTemp <= 0) {
 					std::cout << "Invalid input: Try Again";
-					answer = 0;
+					windowSizeTemp = 0;
 					continue;
 				}
 
 			}
 			std::cout << "Setting Window Size from: " << this->windowSize << "to: " << answer;
-			windowSizeTemp = answer;
 			break;
 		case 2:
 			system("cls");
@@ -394,7 +400,9 @@ vector<employee> getEmployees(utility& util) {
 
 
 //get a single employees payment info
-string ViewSinglePayment(utility& util, string ID) {
+
+//TODO Get the hours worked for employee(s) in specified month
+string ViewSinglePayment(utility& util, string ID, string month) {
 	std::stringstream returnout;
 	employee chosen("", "", 0.0);
 	//get all employees
@@ -408,28 +416,30 @@ string ViewSinglePayment(utility& util, string ID) {
 	if (chosen.name == "") {
 		return "Chosen employee doesn't exist!";
 	}
-	returnout << std::left;
-	returnout << std::setw(11) << "[ID]" << std::setw(11) << "[Name]" << std::setw(11) << "[Pay Rate]" << std::setw(15) << "[Hours Worked]" << std::setw(27) << "[Monthly Pay (Before Tax)]" << std::setw(27) << "[Monthly Pay (After Tax)]" << std::endl;
-	returnout << util.CreateDivider() << std::endl;
-	returnout << std::setw(11) << chosen.ID << std::setw(11) << chosen.name << std::setw(11) << std::setprecision(4) << chosen.pay << std::setw(15) << 0 << std::setw(27) << 0 << std::setw(27) << 0 << std::endl << util.CreateDivider();
+	tabulate::Table table;
+	std::stringstream payFormat;
+	table.add_row({ "Name", "ID", "Rate of Pay", "Hours Worked", "Monthly Pay (Before Tax)", "Monthly Pay (After Tax)"});
+	payFormat = std::stringstream();
+	payFormat << std::setprecision(4) << chosen.pay;
+	table.add_row({ chosen.name, chosen.ID, payFormat.str(), "0", "0", "0"});
 
-	return returnout.str();
+	return table.str();
 }
 
-//return a list of employees information including employee id, name and rate of pay
-string ViewAllPayment(utility& util, string Month) {
-
-	vector<employee> employees = getEmployees(util);
-	std::stringstream returnout;
-	returnout << "View Month {" << Month << "}";
-	return returnout.str();
-}
-//return a list of employees information including employee id, name and rate of pay
+//return a list of payment information for a specified month including employee id, name, rate of pay, hours worked, monthly pay before and after tax;
 string ViewPaymentFile(utility& util, string filename) {
+	//get all employees in order to get pay rate, name and ID
 	vector<employee> employees = getEmployees(util);
-	std::stringstream returnout;
-	returnout << "View File {" << filename << "}";
-	return returnout.str();
+	//Create table
+	tabulate::Table table;
+	std::stringstream payFormat;
+	table.add_row({ "Name", "ID", "Rate of Pay", "Hours Worked", "Monthly Pay (Before Tax)", "Monthly Pay (After Tax)" });
+	for (auto i : employees) {
+		payFormat = std::stringstream();
+		payFormat << std::setprecision(4) << i.pay;
+		table.add_row({ i.name, i.ID, payFormat.str(), "0", "0", "0" });
+	}
+	return table.str();
 }
 
 
@@ -438,14 +448,15 @@ string ViewAllInfo(utility& util) {
 	vector<employee> employees = getEmployees(util);
 	std::stringstream returnout;
 	//Create table
-	returnout << "\n\n";
-	returnout << std::left;
-	returnout << std::setw(5) << "[ID]" << std::setw(5) << "[Name]" << std::setw(5) << "[Rate of Pay]\n";
-	returnout << util.CreateDivider(util.windowSize/3) << std::endl;
+	tabulate::Table table;
+	std::stringstream payFormat;
+	table.add_row({ "Name", "ID", "Rate of Pay"});
 	for (auto i : employees) {
-		returnout << std::setw(i.ID.size() + 5) << i.ID << std::setw(i.name.size() + 5) << i.name << std::setw(std::to_string(i.pay).size() + 5) << std::setprecision(4) << i.pay << std::endl << util.CreateDivider();
+		payFormat = std::stringstream();
+		payFormat << std::setprecision(4) << i.pay;
+		table.add_row({i.name, i.ID, payFormat.str()});
 	}
-	return returnout.str();
+	return table.str();
 }
 
 
@@ -464,11 +475,13 @@ string ViewSingleInfo(utility &util, string ID) {
 	if (chosen.name == "") {
 		return "Chosen employee doesn't exist!";
 	}
-	returnout << std::left;
-	returnout << std::setw(chosen.ID.size() + 5) << "[ID]" << std::setw(chosen.name.size() + 5) << "[Name]" << std::setw(std::to_string(chosen.pay).size() + 5) << "[Rate of Pay]\n";
-	returnout << util.CreateDivider() << std::endl;
-	returnout << std::setw(chosen.ID.size() + 5) << chosen.ID << std::setw(chosen.name.size() + 5) << chosen.name << std::setw(std::to_string(chosen.pay).size() + 5) << std::setprecision(4) << chosen.pay << std::endl << util.CreateDivider();
-	return returnout.str();
+	tabulate::Table table;
+	std::stringstream payFormat;
+	table.add_row({ "Name", "ID", "Rate of Pay" });
+	payFormat = std::stringstream();
+	payFormat << std::setprecision(4) << chosen.pay;
+	table.add_row({ chosen.name, chosen.ID, payFormat.str() });
+	return table.str();
 }
 
 
@@ -483,12 +496,17 @@ void Payment(utility& util, string content) {
 			string id;
 			std::cout << "Please input the ID or name of the employee (case sensitive)\n- ";
 			std::getline(std::cin, id);
-			content = ViewSinglePayment(util, id);
+			string file;
+			std::cout << "Please input filename of the month (case sensitive)\n- ";
+			std::getline(std::cin, file);
+			content = ViewSinglePayment(util, id, file);
 			break;
 		}
 	case 2:
-		std::cout << "File";
-		content = ViewPaymentFile(util, "file");
+		string file;
+		std::cout << "Please input filename of the month (case sensitive)\n- ";
+		std::getline(std::cin, file);
+		content = ViewPaymentFile(util, file);
 		break;
 	
 	}
