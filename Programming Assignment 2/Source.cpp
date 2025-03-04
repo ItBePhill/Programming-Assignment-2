@@ -6,6 +6,7 @@
 #include <string>
 #include <windows.h>
 #include <random>
+#include <filesystem>
 
 //tabulate library: https://github.com/p-ranav/tabulate/releases/tag/v1.5
 //created by: Pranav
@@ -13,6 +14,7 @@
 using std::string;
 using std::vector;
 using std::to_string;
+using std::endl;
 /*
 Programming Assignment 2 - Payroll System - Phillip Wood
 Note: Windows Only
@@ -90,6 +92,7 @@ class employee;
 void Payment(utility& util, string content);
 void Info(utility& util, string content);
 void Welcome(utility& util);
+vector<double> CalculateMonthly(double rate, double hours);
 
 
 
@@ -106,12 +109,13 @@ public:
 	string ID;
 	double pay;
 	double hours;
+	double monthly;
 
-
-	employee(string name, string ID, double pay, double hours = 0.0) : name(name), ID(ID), pay(pay), hours(hours) {
+	employee(string name, string ID, double pay, double hours = 0.0, double monthly = 0.0) : name(name), ID(ID), pay(pay), hours(hours), monthly(monthly) {
 		this->name = name;
 		this->ID = ID;
 		this->pay = pay;
+		this->monthly = monthly;
 	}
 };
 
@@ -206,11 +210,11 @@ Good:                   Too Low:                   Too High:
 				}
 			}
 			//display title of question
-			std::cout << std::endl << title << std::endl;
+			std::cout << endl << title << endl;
 			//display options
 			for (int i = 0; i <= options.size() - 1; i++) {
 				// 0 - {Answer}
-				std::cout << i + 1 << " - " << options[i] << std::endl;
+				std::cout << i + 1 << " - " << options[i] << endl;
 			}
 
 			//get user input
@@ -225,7 +229,7 @@ Good:                   Too Low:                   Too High:
 				inputint = std::strtol(inputstr.c_str(), NULL, 0);
 				//it isn't a number
 				if (inputint == 0 or inputint > options.size() or inputint < 1) {
-					std::cout << std::endl << "Entry is not a valid!\n";
+					std::cout << endl << "Entry is not a valid!\n";
 					system("pause");
 					break;
 				}
@@ -249,7 +253,7 @@ Good:                   Too Low:                   Too High:
 	};
 
 	/*
-	Read one a text file and return the result, this function does no parsing and will just return what is exactly in the file
+	Read a text file and return the result, this function does no parsing and will just return what is exactly in the file
 	Options:
 		filename (string) *Required* - The path to the file you want to read.
 	*/
@@ -313,16 +317,16 @@ Good:                   Too Low:                   Too High:
 		//Create Menu
 		//Display Title / create menu headers
 		std::cout << std::setfill('=') << std::setw(ceil((windowSizeDiffT - 1) / 2)) << " " << title << " " << std::setfill('=') << std::setw(ceil((windowSizeDiffT) / 2 )) << "=";
-		std::cout << std::endl;
+		std::cout << endl;
 		std::cout << std::setfill('=') << std::setw(ceil((windowSizeDiffS - 1) / 2)) << " " << subtitle << " " << std::setfill('=') << std::setw(ceil((windowSizeDiffS) / 2)) << "=";
 		//show content
 		if (content != "") {
-			std::cout << std::endl << CreateDivider() << std::endl;
+			std::cout << endl << CreateDivider() << endl;
 			std::cout << content;
-			std::cout << std::endl << CreateDivider() << std::endl;
+			std::cout << endl << CreateDivider() << endl;
 		}
 		else {
-			std::cout << std::endl << CreateDivider() << std::endl;
+			std::cout << endl << CreateDivider() << endl;
 		}
 		//return the question
 		return question.ask(util);
@@ -397,6 +401,48 @@ static vector<employee> getEmployees(utility& util) {
 }
 
 
+//Get the Hours worked and calculate the monthly income before and after tax
+//edits the employee passed in so no need for a return type
+void EmployeePay(utility& util, string file, employee& emp) {
+	//get the ID and hours worked from file
+	string output = util.Read(file);
+	//parse the file and apply the hours worked to the employee passed in
+	//while also ensuring the ID is the same
+	//a vector of the strings of each employee
+	vector<string> outputarrtemp;
+	float monthly;
+	//a vector which only contains the employee we want
+	vector<string> outputarr;
+	string token;
+	vector<string> outputarrcomp;
+	//split output string into each employee (line)
+	std::istringstream ss(output);
+	while (std::getline(ss, token, '\n')) {
+		outputarrtemp.push_back(token);
+	}
+
+	for (string i : outputarrtemp) {
+		//loop over the string and split with space as delimiter
+		while (std::getline(ss, token, ' ')) {
+			outputarrcomp.push_back(token);
+		}
+		//check if the ID of the line is the same as the ID of the employee provided
+		if (outputarrcomp[0] == emp.ID) {
+			emp.hours = strtod(outputarrcomp[1].c_str(), NULL);
+		/*	emp.monthly = CalculateMonthly();*/
+		}
+
+	}
+	//we must not have found the employee in this file to return an empty vector
+	return { "" };
+}
+
+
+
+vector<double> CalculateMonthly(double rate, double hours) {
+	return {0.0,0.0};
+}
+
 
 //get a single employees payment info
 
@@ -415,13 +461,24 @@ static string ViewSinglePayment(utility& util, string ID) {
 	if (chosen.name == "") {
 		return "Chosen employee doesn't exist!";
 	}
+	//create table object
 	tabulate::Table table;
 	std::stringstream payFormat;
-	table.add_row({ "Name", "ID", "Rate of Pay", "Hours Worked", "Monthly Pay (Before Tax)", "Monthly Pay (After Tax)"});
+	//add the rows
+	table.add_row({ "Name", "ID", "Rate of Pay"});
 	payFormat = std::stringstream();
 	payFormat << std::setprecision(4) << chosen.pay;
 	table.add_row({ chosen.name, chosen.ID, payFormat.str(), "0", "0", "0"});
+	table.add_row({ "Month", "Hours Worked", "Monthly Pay (After Tax)", "Monthly Pay (Before Tax)" });
 
+	//Code Taken from: https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
+	//And last assignment
+	std::string path = ".\\months";
+	
+	for (const auto& entry : std::filesystem::directory_iterator(path)) {
+		
+		std::cout << EmployeePay(util, entry.path().string(), chosen)[1];
+	}
 	return table.str();
 }
 
@@ -484,7 +541,7 @@ static string ViewSingleInfo(utility &util, string ID) {
 	return table.str();
 }
 
-
+//get and show payment information
 void Payment(utility& util, string content) {
 	system("cls");
 	int answer = util.Menu("Payment Information", "View Payment Information", content, { "What Would You Like to do?", {"View Payment Info for an Employee", "View information from a month file"} });
@@ -509,6 +566,7 @@ void Payment(utility& util, string content) {
 	}
 	Payment(util, content);
 }
+//get and show employee information
 void Info(utility& util, string content) {
 	system("cls");
 	int answer = util.Menu("Employee Information", "View employee information", content, { "What Would You Like To Do", {"View all", "View a specific Employee"} });
@@ -531,7 +589,7 @@ void Info(utility& util, string content) {
 	}
 	Info(util, content);
 }
-
+//configure the programs settings.
 static void config(utility& util) {
 	system("cls");
 	int answer = util.Menu("Config", "Configure program settings", "", {"What Would you Like to do?", {"Window Size"}});
@@ -547,6 +605,7 @@ static void config(utility& util) {
 	}
 	config(util);
 }
+//Welcome Screen
 void Welcome(utility& util) {
 	system("cls");
 	std::vector <std::string> messages = {"Live Long and Prosper!", "Hey you you're finally awake!", "Keep the change, ya filthy animal!!", "Also try Minecraft!!", "Han didn't shoot first!!", "I guess you guys aren't ready for that yet. But your kids are gonna love it!", "When you get to Hell, Tell 'em Viper sent you!", "If my grandmother had wheels she would have been a bike!", "Well excuse me, princess!", "Also try Terraria!", "Not on Steam!", "As seen on TV!"};
@@ -579,11 +638,11 @@ void Welcome(utility& util) {
 		return;
 	case 1:
 		util.nest++;
-		Payment(util, "Information will appear here");
+		Payment(util, "*Information will appear here*");
 		break;
 	case 2:
 		util.nest++;
-		Info(util, "Information will appear here");
+		Info(util, "*Information will appear here*");
 		break;
 	case 3:
 		util.nest++;
@@ -595,15 +654,16 @@ void Welcome(utility& util) {
 	Welcome(util);
 }
 /*
-The main function will call other helper functions
-which will do the actual calculations and other stuff
+The main function just starts the program could also be useful for restarting the program as everything is done outside this function.
 */
 int main() {
 	std::cout << "- WARNING -\nResizing Window smaller than default may cause menus to break\n";
 	system("pause");
-	std::cout << std::endl;
+	std::cout << endl;
+	//create the util object and set the window size
 	utility util = utility();
 	util.windowSize = getWidth();
+	//then call welcome to start the program
 	Welcome(util);
 
 }
