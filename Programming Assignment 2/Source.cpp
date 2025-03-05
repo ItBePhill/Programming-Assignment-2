@@ -11,6 +11,8 @@
 //tabulate library: https://github.com/p-ranav/tabulate/releases/tag/v1.5
 //created by: Pranav
 #include "tabulate.hpp"
+
+
 using std::string;
 using std::vector;
 using std::to_string;
@@ -109,13 +111,15 @@ public:
 	string ID;
 	double pay;
 	double hours;
-	double monthly;
+	double Bmonthly;
+	double Amonthly;
 
-	employee(string name, string ID, double pay, double hours = 0.0, double monthly = 0.0) : name(name), ID(ID), pay(pay), hours(hours), monthly(monthly) {
+	employee(string name, string ID, double pay, double hours = 0.0, double Bmonthly = 0.0, double AMonthly = 0.0) : name(name), ID(ID), pay(pay), hours(hours), Amonthly(Amonthly), Bmonthly(Bmonthly) {
 		this->name = name;
 		this->ID = ID;
 		this->pay = pay;
-		this->monthly = monthly;
+		this->Bmonthly = Bmonthly;
+		this->Amonthly = Amonthly;
 	}
 };
 
@@ -258,7 +262,7 @@ Good:                   Too Low:                   Too High:
 		filename (string) *Required* - The path to the file you want to read.
 	*/
 	string Read(string filename) {
-		// read a whole line, including the white space
+		//read a whole line, including the white space
 		//create variable for the file we are reading
 		std::fstream infile;
 		//and for the string to write the result to
@@ -337,19 +341,8 @@ Good:                   Too Low:                   Too High:
 	
 };
 //---------------------------------------------------------
-//Constants -----------------------------------------------
 
 
-//---------------------------------------------------------
-
-
-//Separate Functions -----------------------------------------------
-
-
-
-
-
-//---------------------------------------------------------
 //Get a list of employees
 static vector<employee> getEmployees(utility& util) {
 	/*
@@ -426,15 +419,17 @@ void EmployeePay(utility& util, string file, employee& emp) {
 		while (std::getline(ss, token, ' ')) {
 			outputarrcomp.push_back(token);
 		}
-		//check if the ID of the line is the same as the ID of the employee provided
-		if (outputarrcomp[0] == emp.ID) {
-			emp.hours = strtod(outputarrcomp[1].c_str(), NULL);
-		/*	emp.monthly = CalculateMonthly();*/
+		for (string i : outputarrcomp) {
+			std::cout << endl << i;
 		}
+		//check if the ID of the line is the same as the ID of the employee provided
+		//if (outputarrcomp[0] == emp.ID) {
+		//	emp.hours = strtod(outputarrcomp[1].c_str(), NULL);
+		//}
 
 	}
-	//we must not have found the employee in this file to return an empty vector
-	return { "" };
+	//we must not have found the employee in this file so set hours to -1
+	emp.hours = -1;
 }
 
 
@@ -474,12 +469,23 @@ static string ViewSinglePayment(utility& util, string ID) {
 	//Code Taken from: https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
 	//And last assignment
 	std::string path = ".\\months";
-	
+	//for each month calculate the monthly pay and add it to the employee object
 	for (const auto& entry : std::filesystem::directory_iterator(path)) {
-		
-		std::cout << EmployeePay(util, entry.path().string(), chosen)[1];
+
+		EmployeePay(util, entry.path().string(), chosen);
+		//the current month is broken:
+		//TODO: record error in error txt file
+		if (chosen.hours == -1) {
+			std::cout << endl << "There was an error with this file";
+		}
+		else {
+			table.add_row({ entry.path().string() , to_string(chosen.hours), to_string(chosen.Amonthly), to_string(chosen.Bmonthly) });
+			
+		}
 	}
-	return table.str();
+	return "";
+	//return table.str();
+	
 }
 
 //return a list of payment information for a specified month including employee id, name, rate of pay, hours worked, monthly pay before and after tax;
@@ -590,7 +596,7 @@ void Info(utility& util, string content) {
 	Info(util, content);
 }
 //configure the programs settings.
-static void config(utility& util) {
+void config(utility& util) {
 	system("cls");
 	int answer = util.Menu("Config", "Configure program settings", "", {"What Would you Like to do?", {"Window Size"}});
 	switch (answer) {
