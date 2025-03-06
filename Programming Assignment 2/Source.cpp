@@ -422,14 +422,16 @@ void EmployeePay(utility& util, string file, employee& emp) {
 		for (string i : outputarrcomp) {
 			std::cout << endl << i;
 		}
+
+
+		
 		//check if the ID of the line is the same as the ID of the employee provided
 		//if (outputarrcomp[0] == emp.ID) {
 		//	emp.hours = strtod(outputarrcomp[1].c_str(), NULL);
 		//}
 
 	}
-	//we must not have found the employee in this file so set hours to -1
-	emp.hours = -1;
+	system("pause");
 }
 
 
