@@ -387,7 +387,6 @@ vector<Employee> GetEmployees(Helper& helper) {
 			//add each component
 			outputarrcomp.push_back(token);
 		}
-		std::cout << outputarrcomp.size();
 		if (outputarrcomp.size() >= 3) {
 			outputarr.push_back(Employee(outputarrcomp[1], outputarrcomp[0], strtod(outputarrcomp[2].c_str(), NULL)));
 		}
@@ -430,17 +429,30 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 	//split each line into each component and add it to output
 	for (string line : outputLine) {
 		//split the line by tabs
+		// add 1 to count every time it scans the line if this is over 2 we have gotten stuck in a loop and need to skip this line
+		int loops = 0;
 		while (std::getline(std::istringstream(line), token, '\t')) {
 			//add the component to the back of the temporary vector
-			outputCompTemp.push_back(token);
+			if (loops > 2) {
+				//we are stuck in a loop
+				outputCompTemp.clear();
+				break;
+			}
+			else {
+				outputCompTemp.push_back(token);
+			}
+
+			loops++;
 		}
-		//add the temporary vector to the final output:
-		output.push_back(outputCompTemp);
-		//clear the temp vector for next loop
-		outputCompTemp.clear();
+		if (!outputCompTemp.empty()) {
+			//add the temporary vector to the final output:
+			output.push_back(outputCompTemp);
+			//clear the temp vector for next loop
+			outputCompTemp.clear();
+		}
+		loops = 0;
 	}
-
-
+	system("pause");
 	return output;
 }
 
@@ -458,16 +470,23 @@ string ViewSinglePayment(Helper& helper, string ID) {
 	vector<vector<string>> outputMonths;
 	//get the Employee details
 	Employee info = GetEmployee(helper, ID);
+	if (info.name == "NULL") {
+		return "Employee not found!";
+	}
 	std::string employeeTable = ViewSingleInfo(helper, info);
 	//create a table to add the payment information to.
 	tabulate::Table table;
-	//for each month we find the ID we passed in and get each component
+	//for each month we get the entire file and find the ID passed in
 	std::string path = ".\\months";
 	for (const auto& entry : std::filesystem::directory_iterator(path)) {
 		//get all employees in this file
 		for (vector<string> employee : GetAllPayments(helper, entry.path().string())) {
-
+			if (employee[0] == info.ID) {
+				returnout << "We Found: " << employee[1] << " For ID: " << ID << " In Month: " << entry.path().string();
+				break;
+			}
 		}
+		break;
 	}
 
 	return returnout.str();
