@@ -395,10 +395,10 @@ vector<Employee> GetEmployees(Helper& helper) {
 	return outputarr;
 }
 
-// get a singular Employee
+// get a singular Employee nm\
 //will return an Employee with the name "NULL" if no Employee was found
 Employee GetEmployee(Helper& helper, string name) {
-	//Get all employees and check for the specific ID or username passed in
+	//Get all employees and check f\or the specific ID or username passed in
 	vector<Employee> employees = GetEmployees(helper);
 	for (Employee i : employees) {
 		if (i.ID == name or i.name == name) {
@@ -421,28 +421,22 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 	string data = helper.Read(file);
 	//Parse the File:
 	//First split the output into each line aka employees
-	std::istringstream ss(data);
+	std::stringstream ss(data);
 	std::string token;
 	while (std::getline(ss, token, '\n')) {
 		outputLine.push_back(token);
 	}
 	//split each line into each component and add it to output
 	for (string line : outputLine) {
+		std::cout << line << endl;
 		//split the line by tabs
 		// add 1 to count every time it scans the line if this is over 2 we have gotten stuck in a loop and need to skip this line
 		int loops = 0;
-		while (std::getline(std::istringstream(line), token, '\t')) {
+		while (std::getline(std::stringstream(line), token, '\t')) {
 			//add the component to the back of the temporary vector
-			if (loops > 2) {
-				//we are stuck in a loop
-				outputCompTemp.clear();
-				break;
-			}
-			else {
-				outputCompTemp.push_back(token);
-			}
-
-			loops++;
+			outputCompTemp.push_back(token);
+			std::cout << " - " << token;
+			
 		}
 		if (!outputCompTemp.empty()) {
 			//add the temporary vector to the final output:
