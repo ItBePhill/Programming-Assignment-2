@@ -149,7 +149,7 @@ public:
 R"( 
 Good:                   Too Low:                   Too High:       
  ----------------        ----------------         ----------------   
-|=====mTitle======|      |===mTitle===     |       |=====mTitle======|
+|=====Title======|      |===Title===     |       |=====Title======|
 |----subtitle----|      |--subtitle--    |       |=               |
 |                |      |                |       |----subtitle----|
 |                |      |                |       |-               |
@@ -268,7 +268,7 @@ Good:                   Too Low:                   Too High:
 	string Read(string filename) {
 		//read a whole line, including the white space
 		//create variable for the file we are reading
-		std::fstream infile;
+		std::ifstream infile;
 		//and for the string to write the result to
 		string str;
 		//write to this and then add to the actual return string
@@ -285,13 +285,19 @@ Good:                   Too Low:                   Too High:
 		return str;
 	}
 	/*
-	Write to a text file and return whether it was successful
+	Write to a text file
 	Options:
 		filename (string) *Required* - The path to the file you want to write to (will create the file if it doesn't exist).
+		data (string) *Required* -  The data in string format to write to the file
 	*/
-	bool Write(string filename) {
-		return 0;
+	void Write(string filename, string data) {
+		//Open and if it doesnt exist create the file
+		std::ofstream outfile;
+		outfile.open(filename);
 
+		//write data to file and close it
+		outfile << data;
+		outfile.close();
 	}
 	//Create a divider the size of the window with "-" as the filler
 	const string CreateDivider(int size = -1, char divider = '-') {
@@ -428,15 +434,11 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 	}
 	//split each line into each component and add it to output
 	for (string line : outputLine) {
-		std::cout << line << endl;
-		//split the line by tabs
-		// add 1 to count every time it scans the line if this is over 2 we have gotten stuck in a loop and need to skip this line
-		int loops = 0;
-		while (std::getline(std::stringstream(line), token, '\t')) {
+		//split the line by spaces
+		//since there are only two components if we go over 2 loops then something must be wrong
+		while (std::getline(std::stringstream(line), token, ' ')) {
 			//add the component to the back of the temporary vector
 			outputCompTemp.push_back(token);
-			std::cout << " - " << token;
-			
 		}
 		if (!outputCompTemp.empty()) {
 			//add the temporary vector to the final output:
@@ -444,8 +446,10 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 			//clear the temp vector for next loop
 			outputCompTemp.clear();
 		}
-		loops = 0;
 	}
+	for (vector<string> emp : output) {
+		std::cout << emp[0] << " - " << emp[1] << endl;
+	} 
 	system("pause");
 	return output;
 }
