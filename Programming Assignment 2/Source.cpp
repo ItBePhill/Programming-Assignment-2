@@ -436,7 +436,7 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 	for (string line : outputLine) {
 		std::cout << line << endl;
 		//split the line by tabs
-		while (std::getline(std::stringstream(line), token, '\t')) {
+		while (std::getline(std::stringstream(line), token, ' ')) {
 			//add the component to the back of the temporary vector
 			outputCompTemp.push_back(token);
 		}
@@ -446,7 +446,6 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 			//clear the temp vector for next loop
 			outputCompTemp.clear();
 		}
-		loops = 0;
 	}
 	system("pause");
 	return output;
