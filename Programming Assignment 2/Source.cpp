@@ -63,8 +63,8 @@ TODO:	/  Not Finished
 - Create Main Functions
 	* Welcome Screen //
 	* Find Employee information //
-	* Find specified Employee Pay for each month /
-	* Read from pay file by inputting file name /
+	* Find specified Employee Pay for each month //
+	* Read from pay file by inputting file name 
 	* Write employees id number and monthly pay before tax deduction to a file called '{month_file}_output.txt' /
 	* Record error in a pay file by adding it to a file called errors.txt in format {name of file} {error description}
 
@@ -98,7 +98,7 @@ vector<Employee> GetEmployees(Helper& helper);
 string ViewSingleInfo(Helper& helper, Employee employee);
 
 
-
+//const string char(156) = to_string(char(156));
 
 //---------------------------------------------------------
 
@@ -419,9 +419,9 @@ Employee GetEmployee(Helper& helper, string name) {
 //		[0]				 [1]			  [2]
 // {hours worked, {monthly after}, {monthly before}};
 vector<vector<string>> GetAllPayments(Helper& helper, string file) {
-	vector<string> outputLine;
-	vector<string> outputCompTemp;
-	vector<vector<string>> output;
+	vector<string> outputLine = {};
+	vector<string> outputCompTemp = {};
+	vector<vector<string>> output = { {} };
 
 	//read the month file passed in;
 	string data = helper.Read(file);
@@ -434,26 +434,62 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 	}
 	//split each line into each component and add it to output
 	for (string line : outputLine) {
-		std::cout << line << endl;
-		//split the line by tabs
-		while (std::getline(std::stringstream(line), token, ' ')) {
-			//add the component to the back of the temporary vector
-			outputCompTemp.push_back(token);
+		for (int loops = 0; loops < 1; loops++) {
+			//Code Taken from: https://www.geeksforgeeks.org/split-a-sentence-into-words-in-cpp/#1-using-stringstream
+			//and edited slightly
+
+			// Create a stringstream object
+			std::stringstream ss(line);
+
+			// Variable to hold each word
+			string word;
+
+			// Extract words from the sentence
+			while (ss >> word) {
+				//add the word (ID or hours) to the temporary component vector
+				outputCompTemp.push_back(word);
+
+			}
 		}
-		if (!outputCompTemp.empty()) {
-			//add the temporary vector to the final output:
-			output.push_back(outputCompTemp);
-			//clear the temp vector for next loop
-			outputCompTemp.clear();
-		}
+		// we have looped twice and gotten the ID and hours worked and therefore Need to add it to the final list
+		output.push_back(outputCompTemp);
+		outputCompTemp.clear();
 	}
-	system("pause");
 	return output;
 }
 
 
 
 
+//You must multiply your monthly income by twelve to establish the annual income.If this is less than £12570, then tax should not be deducted,
+//Calculating Income Tax :
+//assuming £2, 000 monthly income.
+//£2, 000 * 12 = £24, 000 (annual income)
+//£24, 000 - £12, 570 = £11, 430 (taxable income)
+//£11, 430 * 0.20 = £2, 286 (annual income tax)
+//£2, 286 / 12 = £190.50 (monthly tax deduction).
+vector<double> CalculateMonthly(double hours, Employee employee) {
+	double monthly;
+	double monthlytaxed;
+	double annual;
+	double annualtaxed;
+	//calculate their monthly income:
+	//pay rate * hours to get the amount of pay over the month
+	monthly = employee.pay * hours;
+	annual = monthly * 12;
+	if (annual >= 12570) {
+		//this person can be taxed
+		
+		annualtaxed = (annual - 12570) * 0.20;
+		monthlytaxed = annualtaxed / 12;
+	}
+	else {
+		//Not applicable to be taxed
+		monthlytaxed = -1;
+	}
+	//{monthly before, monthly after}
+	return { monthly, monthlytaxed};
+}
 //get a single employees payment info
 
 //get the Employee that has the specified ID, display it and then get the monthly pay and hours worked for the ID
@@ -463,29 +499,49 @@ string ViewSinglePayment(Helper& helper, string ID) {
 	std::stringstream returnout;
 	//vector of each months components;
 	vector<vector<string>> outputMonths;
+	tabulate::Table monthlyTable;
 	//get the Employee details
 	Employee info = GetEmployee(helper, ID);
 	if (info.name == "NULL") {
 		return "Employee not found!";
 	}
 	std::string employeeTable = ViewSingleInfo(helper, info);
-	//create a table to add the payment information to.
-	tabulate::Table table;
 	//for each month we get the entire file and find the ID passed in
 	std::string path = ".\\months";
 	for (const auto& entry : std::filesystem::directory_iterator(path)) {
-		//get all employees in this file
-		for (vector<string> employee : GetAllPayments(helper, entry.path().string())) {
-			if (employee[0] == info.ID) {
-				returnout << "We Found: " << employee[1] << " For ID: " << ID << " In Month: " << entry.path().string();
-				break;
+		//get all the payments in this file
+		vector<vector<string>> data = GetAllPayments(helper, entry.path().string());
+		for (vector<string> employee : data) {
+			if (!employee.empty()) {
+				if (employee[0] == info.ID && employee.size() > 1) {
+					//add this to the list for each month
+					//add the stuff from the month plus the file name
+					outputMonths.push_back({employee[0], employee[1], entry.path().string()});
+				}
 			}
 		}
-		break;
 	}
 
-	return returnout.str();
-}
+
+	monthlyTable.add_row({"Month", "Hours Worked", "Rate of Pay", "Monthly(Before Tax)", "Monthly (After Tax)"});
+	for (auto i : outputMonths) {
+		//get the monthly income
+		vector<double> monthlies = CalculateMonthly(strtod(i[1].c_str(), NULL), info);
+		std::stringstream monthlyB;
+		monthlyB <<  std::fixed << std::setprecision(2) << monthlies[0];
+		std::stringstream monthlyA;
+		if (monthlies[1] == -1) {
+			monthlyA << "N/A";
+		}
+		else {
+			monthlyB << std::fixed << std::setprecision(2) << monthlies[1];
+		}
+
+		monthlyTable.add_row({ i[2], i[1]+"hrs" , char(156)+to_string(info.pay), char(156)+monthlyB.str(), char(156)+monthlyB.str()});
+
+	}
+	return employeeTable + "\n\n" + monthlyTable.str();
+ }
 
 //return a list of payment information for a specified month including Employee id, name, rate of pay, hours worked, monthly pay before and after tax;
 //TODO: Get Hours worked for each Employee;
