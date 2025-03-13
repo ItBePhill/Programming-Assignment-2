@@ -149,7 +149,7 @@ public:
 R"( 
 Good:                   Too Low:                   Too High:       
  ----------------        ----------------         ----------------   
-|=====mTitle======|      |===mTitle===     |       |=====mTitle======|
+|=====Title======|      |===Title===     |       |=====Title======|
 |----subtitle----|      |--subtitle--    |       |=               |
 |                |      |                |       |----subtitle----|
 |                |      |                |       |-               |
@@ -268,7 +268,7 @@ Good:                   Too Low:                   Too High:
 	string Read(string filename) {
 		//read a whole line, including the white space
 		//create variable for the file we are reading
-		std::fstream infile;
+		std::ifstream infile;
 		//and for the string to write the result to
 		string str;
 		//write to this and then add to the actual return string
@@ -285,13 +285,19 @@ Good:                   Too Low:                   Too High:
 		return str;
 	}
 	/*
-	Write to a text file and return whether it was successful
+	Write to a text file
 	Options:
 		filename (string) *Required* - The path to the file you want to write to (will create the file if it doesn't exist).
+		data (string) *Required* -  The data in string format to write to the file
 	*/
-	bool Write(string filename) {
-		return 0;
+	void Write(string filename, string data) {
+		//Open and if it doesnt exist create the file
+		std::ofstream outfile;
+		outfile.open(filename);
 
+		//write data to file and close it
+		outfile << data;
+		outfile.close();
 	}
 	//Create a divider the size of the window with "-" as the filler
 	const string CreateDivider(int size = -1, char divider = '-') {
@@ -433,8 +439,6 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 		while (std::getline(std::stringstream(line), token, '\t')) {
 			//add the component to the back of the temporary vector
 			outputCompTemp.push_back(token);
-			std::cout << " - " << token;
-			
 		}
 		if (!outputCompTemp.empty()) {
 			//add the temporary vector to the final output:
@@ -442,6 +446,7 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 			//clear the temp vector for next loop
 			outputCompTemp.clear();
 		}
+		loops = 0;
 	}
 	system("pause");
 	return output;
