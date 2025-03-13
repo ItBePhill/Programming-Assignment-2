@@ -56,7 +56,7 @@ TODO:	/  Not Finished
 
 - Create Utility functions /
 	* Read Text //
-	* Write Text 
+	* Write Text //
 	* Menu Template //
 		- Potentially make mTitle update automatically to centre with subtitle //
 	* Question Template //
@@ -430,8 +430,6 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 	for (string line : outputLine) {
 		std::cout << line << endl;
 		//split the line by tabs
-		// add 1 to count every time it scans the line if this is over 2 we have gotten stuck in a loop and need to skip this line
-		int loops = 0;
 		while (std::getline(std::stringstream(line), token, '\t')) {
 			//add the component to the back of the temporary vector
 			outputCompTemp.push_back(token);
@@ -444,7 +442,6 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 			//clear the temp vector for next loop
 			outputCompTemp.clear();
 		}
-		loops = 0;
 	}
 	system("pause");
 	return output;
