@@ -64,9 +64,9 @@ TODO:	/  Not Finished
 	* Welcome Screen //
 	* Find Employee information //
 	* Find specified Employee Pay for each month //
-	* Read from pay file by inputting file name 
+	* Read from pay file by inputting file name //
 	* Write employees id number and monthly pay before tax deduction to a file called '{month_file}_output.txt' /
-	* Record error in a pay file by adding it to a file called errors.txt in format {name of file} {error description}
+	* Record error in a pay file by adding it to a file called errors.txt in format {name of file} {error description} /
 
 
 
@@ -266,6 +266,11 @@ Good:                   Too Low:                   Too High:
 		filename (string) *Required* - The path to the file you want to read.
 	*/
 	string Read(string filename) {
+
+
+		if (!std::filesystem::exists(filename)) {
+			return "Something went wrong and we couldnt find the file";
+		}
 		//read a whole line, including the white space
 		//create variable for the file we are reading
 		std::ifstream infile;
@@ -522,31 +527,61 @@ string ViewSinglePayment(Helper& helper, string ID) {
 		}
 	}
 
-
-	monthlyTable.add_row({"Month", "Hours Worked", "Rate of Pay", "Monthly(Before Tax)", "Monthly (After Tax)"});
+	//create and display table
+	monthlyTable.add_row({"Month", "Hours Worked", "Monthly(Before Tax)", "Monthly (After Tax)"});
 	for (auto i : outputMonths) {
 		//get the monthly income
 		vector<double> monthlies = CalculateMonthly(strtod(i[1].c_str(), NULL), info);
-		std::stringstream monthlyB;
-		monthlyB <<  std::fixed << std::setprecision(2) << monthlies[0];
-		std::stringstream monthlyA;
-		if (monthlies[1] == -1) {
-			monthlyA << "N/A";
+		//create stringstreams for the monthlies to set precision
+		std::stringstream monthlyAfter;
+		std::stringstream monthlyBefore;
+		if(monthlies[1] != -1){
+			monthlyAfter << char(156) << std::fixed << std::setprecision(2) << monthlies[1];
 		}
 		else {
-			monthlyB << std::fixed << std::setprecision(2) << monthlies[1];
+			monthlyAfter << "N/A";
 		}
-
-		monthlyTable.add_row({ i[2], i[1]+"hrs" , char(156)+to_string(info.pay), char(156)+monthlyB.str(), char(156)+monthlyB.str()});
+		monthlyBefore << char(156) << std::fixed << std::setprecision(2) << monthlies[0];
+		
+		//add the values to the table
+		monthlyTable.add_row({ i[2], i[1]+"hrs", monthlyBefore.str(), monthlyAfter.str()});
 
 	}
-	return employeeTable + "\n\n" + monthlyTable.str();
+	//return the tables as strings
+	return employeeTable + "\n" + monthlyTable.str();
  }
 
 //return a list of payment information for a specified month including Employee id, name, rate of pay, hours worked, monthly pay before and after tax;
 //TODO: Get Hours worked for each Employee;
 string ViewPaymentFile(Helper& helper, string filename) { 
-	return "";
+	//get all the payments in this file
+	vector<vector<string>> data = GetAllPayments(helper, filename);
+	//Create table
+	tabulate::Table table;
+	table.add_row({ "Name", "ID", "Rate of Pay", "Monthly (Before Tax)", "Monthly (After Tax)"});
+	for (vector<string> payment : data) {
+		
+		if (!payment.empty()) {
+			Employee info = GetEmployee(helper, payment[0]);
+			if (info.name != "NULL") {
+				//get the details for this ID
+				vector<double> monthlies = CalculateMonthly(strtod(payment[1].c_str(), NULL), info);
+				std::stringstream monthlyAfter;
+				std::stringstream monthlyBefore;
+				if (monthlies[1] != -1) {
+					monthlyAfter << char(156) << std::fixed << std::setprecision(2) << monthlies[1];
+				}
+				else {
+					monthlyAfter << "N/A";
+				}
+				monthlyBefore << char(156) << std::fixed << std::setprecision(2) << monthlies[0];
+				std::stringstream pay;
+				pay << char(156) << std::fixed << std::setprecision(2) << info.pay;
+				table.add_row({ info.name, info.ID, pay.str(), monthlyBefore.str(), monthlyAfter.str() });
+			}
+		}
+	}
+	return table.str();
 }
 
 
@@ -555,12 +590,11 @@ string ViewAllInfo(Helper& helper) {
 	vector<Employee> employees = GetEmployees(helper);
 	//Create table
 	tabulate::Table table;
-	std::stringstream payFormat;
 	table.add_row({ "Name", "ID", "Rate of Pay"});
 	for (Employee i : employees) {
-		payFormat = std::stringstream();
-		payFormat << std::setprecision(4) << i.pay;
-		table.add_row({i.name, i.ID, payFormat.str()});
+		std::stringstream pay;
+		pay << char(156) << std::fixed << std::setprecision(2) << i.pay;
+		table.add_row({ i.name, i.ID, pay.str() });
 	}
 	return table.str();
 }
@@ -571,8 +605,9 @@ string ViewSingleInfo(Helper &helper, Employee employee) {
 	tabulate::Table table;
 	std::stringstream payFormat;
 	table.add_row({ "Name", "ID", "Rate of Pay" });
-	payFormat << std::setprecision(4) << employee.pay;
-	table.add_row({ employee.name, employee.ID, payFormat.str() });
+	std::stringstream pay;
+	pay << char(156) << std::fixed << std::setprecision(2) << employee.pay;
+	table.add_row({ employee.name, employee.ID, pay.str()});
 	return table.str();
 }
 
@@ -593,9 +628,14 @@ void Payment(Helper& helper, string content) {
 		}
 	case 2:
 		string file;
-		std::cout << "Please input filename of the month (case sensitive)\n- ";
+		std::cout << "Please input filename of the month (e.g. Mar25.txt) (case sensitive)\n- ";
 		std::getline(std::cin, file);
-		content = ViewPaymentFile(helper, file);
+		if (std::filesystem::exists(".\\months\\" + file)) {
+			content = ViewPaymentFile(helper, ".\\months\\" + file);
+		}
+		else {
+			content = "That File Doesn't Exist!";
+		}
 		break;
 	
 	}
