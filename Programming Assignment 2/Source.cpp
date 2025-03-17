@@ -58,7 +58,7 @@ TODO:	/  Not Finished
 	* Read Text //
 	* Write Text //
 	* Menu Template //
-		- Potentially make mTitle update automatically to centre with subtitle //
+		- Potentially make title update automatically to centre with subtitle //
 	* Question Template //
 - Create Main Functions
 	* Welcome Screen //
