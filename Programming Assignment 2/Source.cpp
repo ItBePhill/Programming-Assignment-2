@@ -132,6 +132,14 @@ public:
 	void setWindowSizeAuto() {
 		this->mWindowSize = getWidth();
 	}
+	void setWindowSize(size_t Size) {
+		if (Size < 1) {
+			throw std::invalid_argument("Size too small");
+		}
+		else {
+			this->mWindowSize = Size;
+		}
+	}
 	void IncrementNest() {
 		this->mNest++;
 	}
@@ -205,7 +213,7 @@ Good:                   Too Low:                   Too High:
 		vector<string> mOptions;
 	public:
 		
-		Question(string mTitle = "What Would you Like to do?", vector<string> mOptions = { "Back" }) : mTitle(mTitle), mOptions(mOptions) {
+		Question(string Title = "What Would you Like to do?", vector<string> Options = { "Back" }) : mTitle(Title), mOptions(Options) {
 		}
 		//Ask the question
 		int ask(Helper& helper) {
@@ -421,8 +429,8 @@ Employee GetEmployee(Helper& helper, string name) {
 }
 //GetPayments function will get the payment info from a file and return it;
 //output format:
-//		[0]				 [1]			  [2]
-// {hours worked, {monthly after}, {monthly before}};
+//		  [0]				[1]
+// {monthly before}, {monthly after}};
 vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 	vector<string> outputLine = {};
 	vector<string> outputCompTemp = {};
@@ -439,41 +447,44 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 	}
 	//split each line into each component and add it to output
 	for (string line : outputLine) {
-		for (int loops = 0; loops < 1; loops++) {
-			//Code Taken from: https://www.geeksforgeeks.org/split-a-sentence-into-words-in-cpp/#1-using-stringstream
-			//and edited slightly
+		//Code Taken from: https://www.geeksforgeeks.org/split-a-sentence-into-words-in-cpp/#1-using-stringstream
+		//and edited slightly
 
-			// Create a stringstream object
-			std::stringstream ss(line);
+		// Create a stringstream object
+		std::stringstream ss(line);
 
-			// Variable to hold each word
-			string word;
+		// Variable to hold each word
+		string word;
 
-			// Extract words from the sentence
-			while (ss >> word) {
-				//add the word (ID or hours) to the temporary component vector
-				outputCompTemp.push_back(word);
+		// Extract words from the sentence
+		//the amount of times we've looped
+		//if 1 then it must be a 
+		int count = 0;
+		while (ss >> word) {
+			//add the word (ID or hours) to the temporary component vector
+			outputCompTemp.push_back(word);
+			count++;
 
-			}
 		}
-		// we have looped twice and gotten the ID and hours worked and therefore Need to add it to the final list
-		output.push_back(outputCompTemp);
-		outputCompTemp.clear();
 	}
+	// we have looped twice and gotten the ID and hours worked and therefore Need to add it to the final list
+	output.push_back(outputCompTemp);
+	outputCompTemp.clear();
 	return output;
 }
 
 
 
 
-//You must multiply your monthly income by twelve to establish the annual income.If this is less than £12570, then tax should not be deducted,
-//Calculating Income Tax :
-//assuming £2, 000 monthly income.
-//£2, 000 * 12 = £24, 000 (annual income)
-//£24, 000 - £12, 570 = £11, 430 (taxable income)
-//£11, 430 * 0.20 = £2, 286 (annual income tax)
-//£2, 286 / 12 = £190.50 (monthly tax deduction).
+
 vector<double> CalculateMonthly(double hours, Employee employee) {
+	//You must multiply your monthly income by twelve to establish the annual income.If this is less than £12570, then tax should not be deducted,
+	//Calculating Income Tax :
+	//assuming £2, 000 monthly income.
+	//£2, 000 * 12 = £24, 000 (annual income)
+	//£24, 000 - £12, 570 = £11, 430 (taxable income)
+	//£11, 430 * 0.20 = £2, 286 (annual income tax)
+	//£2, 286 / 12 = £190.50 (monthly tax deduction).
 	double monthly;
 	double monthlytaxed;
 	double annual;
@@ -484,9 +495,9 @@ vector<double> CalculateMonthly(double hours, Employee employee) {
 	annual = monthly * 12;
 	if (annual >= 12570) {
 		//this person can be taxed
-		
 		annualtaxed = (annual - 12570) * 0.20;
 		monthlytaxed = annualtaxed / 12;
+		monthlytaxed = monthly - monthlytaxed;
 	}
 	else {
 		//Not applicable to be taxed
@@ -495,8 +506,8 @@ vector<double> CalculateMonthly(double hours, Employee employee) {
 	//{monthly before, monthly after}
 	return { monthly, monthlytaxed};
 }
-//get a single employees payment info
 
+//get a single employees payment info
 //get the Employee that has the specified ID, display it and then get the monthly pay and hours worked for the ID
 //First get the
 string ViewSinglePayment(Helper& helper, string ID) {
@@ -560,7 +571,6 @@ string ViewPaymentFile(Helper& helper, string filename) {
 	tabulate::Table table;
 	table.add_row({ "Name", "ID", "Rate of Pay", "Monthly (Before Tax)", "Monthly (After Tax)"});
 	for (vector<string> payment : data) {
-		
 		if (!payment.empty()) {
 			Employee info = GetEmployee(helper, payment[0]);
 			if (info.name != "NULL") {
