@@ -457,19 +457,21 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 		string word;
 
 		// Extract words from the sentence
-		//the amount of times we've looped
-		//if 1 then it must be a 
-		int count = 0;
 		while (ss >> word) {
 			//add the word (ID or hours) to the temporary component vector
 			outputCompTemp.push_back(word);
-			count++;
 
 		}
+		//the output vector is smaller than it should be and is therefore missing a component
+		//TODO: add a way to check which counter we are at to determine whether it is a missing ID or hours.
+		if (outputCompTemp.size() < 2) {
+			outputCompTemp.clear();
+			continue;
+		}
+		// we have looped twice and gotten the ID and hours worked and therefore Need to add it to the final list
+		output.push_back(outputCompTemp);
+		outputCompTemp.clear();
 	}
-	// we have looped twice and gotten the ID and hours worked and therefore Need to add it to the final list
-	output.push_back(outputCompTemp);
-	outputCompTemp.clear();
 	return output;
 }
 
