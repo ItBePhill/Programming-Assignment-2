@@ -536,7 +536,6 @@ string ViewSinglePayment(Helper& helper, string ID) {
 		else {
 			monthlyB << std::fixed << std::setprecision(2) << monthlies[1];
 		}
-
 		monthlyTable.add_row({ i[2], i[1]+"hrs" , char(156)+to_string(info.pay), char(156)+monthlyB.str(), char(156)+monthlyB.str()});
 
 	}
