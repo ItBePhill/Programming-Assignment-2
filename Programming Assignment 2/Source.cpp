@@ -457,14 +457,26 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 		string word;
 
 		// Extract words from the sentence
+		int count = 0;
 		while (ss >> word) {
 			//add the word (ID or hours) to the temporary component vector
 			outputCompTemp.push_back(word);
+			count++;
 
 		}
 		//the output vector is smaller than it should be and is therefore missing a component
 		//TODO: add a way to check which counter we are at to determine whether it is a missing ID or hours.
 		if (outputCompTemp.size() < 2) {
+			if (count == 0) {
+				//we have an ID but not hours
+				std::cout << endl << "We are missing the hours!";
+				system("pause");
+			}
+			else {
+				//we have hours but not an ID
+				std::cout << endl <<  "We are missing the ID!";
+				system("pause");
+			}
 			outputCompTemp.clear();
 			continue;
 		}
@@ -477,8 +489,10 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 
 
 
+//write the monthlies to the month file
+void writeMonthlies(Helper &helper, vector<double> monthlies, string month) {
 
-
+}
 vector<double> CalculateMonthly(double hours, Employee employee) {
 	//You must multiply your monthly income by twelve to establish the annual income.If this is less than £12570, then tax should not be deducted,
 	//Calculating Income Tax :
@@ -578,6 +592,7 @@ string ViewPaymentFile(Helper& helper, string filename) {
 			if (info.name != "NULL") {
 				//get the details for this ID
 				vector<double> monthlies = CalculateMonthly(strtod(payment[1].c_str(), NULL), info);
+				writeMonthlies(helper, monthlies, filename);
 				std::stringstream monthlyAfter;
 				std::stringstream monthlyBefore;
 				if (monthlies[1] != -1) {
