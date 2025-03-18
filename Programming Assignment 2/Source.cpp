@@ -358,6 +358,12 @@ Good:                   Too Low:                   Too High:
 		//return the question
 		return question.ask(helper);
 	}	
+
+	//replace text in a string
+	//easier than typing out all that
+	string replaceText(string original, string oldsubstr, string newsubstr) {
+		return original.replace(original.find(oldsubstr), sizeof(oldsubstr) - 1, newsubstr);
+	}
 };
 //---------------------------------------------------------
 
@@ -459,22 +465,20 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 		// Extract words from the sentence
 		int count = 0;
 		while (ss >> word) {
-			//add the word (ID or hours) to the temporary component vector
 			outputCompTemp.push_back(word);
 			count++;
-
 		}
 		//the output vector is smaller than it should be and is therefore missing a component
 		//TODO: add a way to check which counter we are at to determine whether it is a missing ID or hours.
 		if (outputCompTemp.size() < 2) {
 			if (count == 0) {
 				//we have an ID but not hours
-				std::cout << endl << "We are missing the hours!";
+				std::cout << endl << "We are missing the ID! for hours: " << word << endl;
 				system("pause");
 			}
 			else {
 				//we have hours but not an ID
-				std::cout << endl <<  "We are missing the ID!";
+				std::cout << endl <<  "We are missing hours! for ID: " << word << endl;
 				system("pause");
 			}
 			outputCompTemp.clear();
@@ -489,9 +493,28 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 
 
 
-//write the monthlies to the month file
-void writeMonthlies(Helper &helper, vector<double> monthlies, string month) {
+//write the monthlies to a file
+void writeMonthlies(Helper &helper, vector<vector<double>> monthlies, vector<string> hours, vector<Employee> employees, string filename) {
+	//strings that will be written to the file
+	std::stringstream outputString;
+	std::stringstream ssTemp;
+	//add _output to filename
+	filename = helper.replaceText(filename, ".txt", "_output.txt");
+	//Taken from: https://stackoverflow.com/questions/8520560/get-a-file-name-from-a-path
+	string base_filename = filename.substr(filename.find_last_of("/\\") + 1);
+	filename = ".\\months\\output\\" + base_filename;
+	system("pause");
+	//for each employee then construct a string which will be written on a line of the file
+	//format of each line:
+	//ID hours monthly(before) monthly(after)
+	for (int i = 0; i < employees.size() - 1; i++) {
+		ssTemp = std::stringstream();
+		ssTemp << employees[i].ID << " " << monthlies[i][0] << " " << monthlies[i][1];
+		outputString << ssTemp.str() << "\n";
+	}
 
+	//write to the file
+	helper.Write(filename, outputString.str());
 }
 vector<double> CalculateMonthly(double hours, Employee employee) {
 	//You must multiply your monthly income by twelve to establish the annual income.If this is less than £12570, then tax should not be deducted,
@@ -525,7 +548,7 @@ vector<double> CalculateMonthly(double hours, Employee employee) {
 
 //get a single employees payment info
 //get the Employee that has the specified ID, display it and then get the monthly pay and hours worked for the ID
-//First get the
+//then calculate the monthly pay with/without tax
 string ViewSinglePayment(Helper& helper, string ID) {
 	//the stringstream that will be outputted
 	std::stringstream returnout;
@@ -585,14 +608,24 @@ string ViewPaymentFile(Helper& helper, string filename) {
 	vector<vector<string>> data = GetAllPayments(helper, filename);
 	//Create table
 	tabulate::Table table;
+
+	vector<vector<double>> monthliesVector;
+	vector<string> hours;
+	vector<Employee> employees;
+
 	table.add_row({ "Name", "ID", "Rate of Pay", "Monthly (Before Tax)", "Monthly (After Tax)"});
 	for (vector<string> payment : data) {
 		if (!payment.empty()) {
 			Employee info = GetEmployee(helper, payment[0]);
+
 			if (info.name != "NULL") {
 				//get the details for this ID
 				vector<double> monthlies = CalculateMonthly(strtod(payment[1].c_str(), NULL), info);
-				writeMonthlies(helper, monthlies, filename);
+
+				monthliesVector.push_back(monthlies);
+				hours.push_back(payment[1]);
+				employees.push_back(info);
+				
 				std::stringstream monthlyAfter;
 				std::stringstream monthlyBefore;
 				if (monthlies[1] != -1) {
@@ -606,8 +639,13 @@ string ViewPaymentFile(Helper& helper, string filename) {
 				pay << char(156) << std::fixed << std::setprecision(2) << info.pay;
 				table.add_row({ info.name, info.ID, pay.str(), monthlyBefore.str(), monthlyAfter.str() });
 			}
+			else {
+				std::cout << endl << "Employee with ID: " << payment[0] << " doesn't exist, maybe it's typed wrong?" << endl;
+				system("pause");
+			}
 		}
 	}
+	writeMonthlies(helper, monthliesVector, hours, employees, filename);
 	return table.str();
 }
 
@@ -701,7 +739,7 @@ void Info(Helper& helper, string content) {
 //configure the programs settings.
 void config(Helper& helper) {
 	system("cls");
-	int answer = helper.Menu("Config", "Configure program settings", "", { "What Would you Like to do?", {"Window Size"} });
+	int answer = helper.Menu("Config", "Configure program settings", "", { "What Would you Like to do?", {"Window Size", "View Error List"}});
 	switch (answer) {
 	case 0:
 		helper.DecrementNest();
@@ -710,8 +748,11 @@ void config(Helper& helper) {
 	case 1:
 		helper.IncrementNest();
 		helper.windowSizeConfig();
-
+		break;
+	case 2:
+		break;
 	}
+
 	config(helper);
 }
 //Welcome Screen
@@ -734,8 +775,8 @@ void Welcome(Helper& helper) {
 	string content = splash + "The payroll system will contain all the information for an Employee and their pay including income tax";
 	//replace {splash} with a random message chosen by random number generator above
 	int randomint = distrib(gen);
-
-	content.replace(content.find("{splash}"), sizeof("{splash}") - 1, messages[randomint]);
+	content = helper.replaceText(content, "{splash}", messages[randomint]);
+	
 
 	
 	
@@ -769,6 +810,17 @@ int main() {
 	std::cout << "- WARNING -\nResizing Window smaller than default may cause menus to break\n";
 	system("pause");
 	std::cout << endl;
+	//Check if required folders exist:
+
+	//months folder
+	if (!std::filesystem::exists(".\\months")) {
+		system("mkdir .\\months");
+	}
+	//output folder
+	else if (!std::filesystem::exists(".\\months\\output")) {
+		system("mkdir .\\months\\output");
+	}
+
 	//create the helper object which contains helper functions and set the window size
 	Helper helper = Helper();
 	helper.setWindowSizeAuto();
