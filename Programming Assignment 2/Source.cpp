@@ -65,7 +65,7 @@ TODO:	/  Not Finished
 	* Find Employee information //
 	* Find specified Employee Pay for each month //
 	* Read from pay file by inputting file name //
-	* Write employees id number and monthly pay before tax deduction to a file called '{month_file}_output.txt' /
+	* Write employees id number and monthly pay before tax deduction to a file called '{month_file}_output.txt' //
 	* Record error in a pay file by adding it to a file called errors.txt in format {name of file} {error description} /
 
 
