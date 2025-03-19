@@ -91,21 +91,20 @@ static int getWidth() {
 //Function/Class Declarations -----------------------------
 class Helper;
 struct Employee;
-void Payment(Helper& helper, string content);
-void Info(Helper& helper, string content);
-void Welcome(Helper& helper);
-vector<Employee> GetEmployees(Helper& helper);
-string ViewSingleInfo(Helper& helper, Employee employee);
-
-
-//const string char(156) = to_string(char(156));
-
+void Payment(Helper&, string );
+void Info(Helper&, string );
+void Welcome(Helper&);
+vector<Employee> GetEmployees(Helper&);
+string ViewSingleInfo(Helper&, Employee);
+void writeErrors(Helper&, string, vector<string>);
 //---------------------------------------------------------
 
 
 //Classes -------------------------------------------------
 
-//Employee struct holds info on an Employee including name, ID and pay
+/// <summary>
+/// holds info on an Employee including name, ID and pay
+/// </summary>
 struct Employee {
 	public:
 		//name of the Employee
@@ -117,15 +116,20 @@ struct Employee {
 };
 
 
-
-//Utility functions e.g. Read, Write
+/// <summary>
+/// Utility functions e.g. Read, Write
+/// </summary>
 class Helper {
 private:
 	//size of the console window, used to create dividers and menus
 	size_t mWindowSize = 120;
 	//the current amount of menus the user is in
 	int mNest = 0;
+	char mMoneySign = char(156);
 public:
+	char getMoneySign() {
+		return mMoneySign;
+	}
 	size_t getWindowSize() {
 		return this->mWindowSize;
 	}
@@ -146,7 +150,11 @@ public:
 	void DecrementNest() {
 		this->mNest--;
 	}
-	//Adjust window size
+
+
+	/// <summary>
+	/// Adjust window Size Menu
+	/// </summary>
 	void windowSizeConfig() {
 		system("cls");
 		size_t windowSizeTemp = 0;
@@ -196,26 +204,24 @@ Good:                   Too Low:                   Too High:
 		this->mWindowSize = windowSizeTemp;
 		windowSizeConfig();
 	}
-	/*
-	little weird having a class nested in a class but it's cleaner than having it separate so oh well
-	Will store a question e.g.
-	1 - Add Credits
-	2 - Create Order 
 
-
-	Options:
-		Title (string) *Optional* Default: "What would you like to do?" - The Question to ask the user.
-		Options (Vector of strings) *Required* - The mOptions for the user to choose from.
-	*/
 	class Question {
 	private:
 		string mTitle;
 		vector<string> mOptions;
 	public:
-		
+		/// <summary>
+		/// A Question to be used in a menu
+		/// </summary>
+		/// <param name="Title">The title opf the question</param>
+		/// <param name="Options">The options for the question</param>
 		Question(string Title = "What Would you Like to do?", vector<string> Options = { "Back" }) : mTitle(Title), mOptions(Options) {
 		}
-		//Ask the question
+		/// <summary>
+		/// Ask the question
+		/// </summary>
+		/// <param name="helper">Helper class</param>
+		/// <returns></returns>
 		int ask(Helper& helper) {
 			if (mOptions.back() != "Back") {
 				if (helper.mNest == 0) {
@@ -268,21 +274,20 @@ Good:                   Too Low:                   Too High:
 		}
 	};
 
-	/*
-	Read a text file and return the result, this function does no parsing and will just return what is exactly in the file
-	Options:
-		filename (string) *Required* - The path to the file you want to read.
-	*/
+	
+	/// <summary>
+	/// Read a text file and return the result, this function does no parsing and will just return what is exactly in the file
+	/// </summary>
+	/// <param name="filename">The path to the file you want to read.</param>
+	/// <returns></returns>
 	string Read(string filename) {
-
-
 		if (!std::filesystem::exists(filename)) {
 			return "Something went wrong and we couldnt find the file";
 		}
 		//read a whole line, including the white space
 		//create variable for the file we are reading
 		std::ifstream infile;
-		//and for the string to write the result to
+		//and for the string to write the result to a buffer
 		string str;
 		//write to this and then add to the actual return string
 		string buffer;
@@ -297,12 +302,11 @@ Good:                   Too Low:                   Too High:
 		infile.close();
 		return str;
 	}
-	/*
-	Write to a text file
-	Options:
-		filename (string) *Required* - The path to the file you want to write to (will create the file if it doesn't exist).
-		data (string) *Required* -  The data in string format to write to the file
-	*/
+	/// <summary>
+	/// Write to a text file
+	/// </summary>
+	/// <param name="filename">The path to the file you want to write to (will create the file if it doesn't exist).</param>
+	/// <param name="data">The data in string format to write to the file</param>
 	void Write(string filename, string data) {
 		//Open and if it doesnt exist create the file
 		std::ofstream outfile;
@@ -312,38 +316,39 @@ Good:                   Too Low:                   Too High:
 		outfile << data;
 		outfile.close();
 	}
-	//Create a divider the size of the window with "-" as the filler
+	/// <summary>
+	/// Create a Divider using the '-' character
+	/// </summary>
+	/// <param name="size">the size of the divider if set to -1 will create based on windowSize</param>
+	/// <param name="divider">the divider to use defaults to '-' </param>
+	/// <returns></returns>
 	const string CreateDivider(int size = -1, char divider = '-') {
-		Helper helper = *this;
 		if (size == -1) {
-			size = helper.mWindowSize;
+			size = this->mWindowSize;
 		}
 		std::stringstream ss;
 		ss << std::setfill(divider) << std::setw(size) << "-";
 		return ss.str();
 	}
 
-	/*
-	Create and Show the user a standardised menu
-	Options:
-		mTitle (string) *Required* - The Title of the menu e.g. Welcome
-		subtitle (string) *Optional* - a subtitle displayed under the mTitle, could be useful for nested menus
-		content (string) *Optional* - Content in the menu e.g. could be a paragraph or just a sentence, won't default but isn't required for menu to function as a back answer is added automatically
-		question *Optional* - A Question to ask the user, e.g. what menu to move to, won't default but isn't required for menu to function as a back answer is added automatically
-	There will always be a back option in the question so no need to add one
-	*/
 
-	
-	int Menu(string mTitle, string subtitle, string content, Question question) {
-		Helper helper = *this;
+	/// <summary>
+	/// 	Create and Show the user a standardised menu
+	/// </summary>
+	/// <param name="mTitle">The Title of the menu e.g. Welcome</param>
+	/// <param name="subtitle">A subtitle displayed under the Title, could be useful for nested menus</param>
+	/// <param name="content">Content in the menu e.g. could be a paragraph or just a sentence, won't default but isn't required for menu to function as a back answer is added automatically</param>
+	/// <param name="question">A Question to ask the user, e.g. what menu to move to, won't default but isn't required for menu to function as a back answer is added automatically</param>
+	/// <returns></returns>
+	int Menu(string title, string subtitle, string content, Question question) {
 		//The size of the window
 		//the difference between the size of the window and the size of the mTitle in characters
-		const size_t windowSizeDiffT = helper.mWindowSize - mTitle.size();
-		const size_t windowSizeDiffS = helper.mWindowSize - subtitle.size();
+		const size_t windowSizeDiffT = this->mWindowSize - title.size();
+		const size_t windowSizeDiffS = this->mWindowSize - subtitle.size();
 
 		//Create Menu
 		//Display Title / create menu headers
-		std::cout << std::setfill('=') << std::setw(ceil((windowSizeDiffT - 1) / 2)) << " " << mTitle << " " << std::setfill('=') << std::setw(ceil((windowSizeDiffT) / 2 )) << "=";
+		std::cout << std::setfill('=') << std::setw(ceil((windowSizeDiffT - 1) / 2)) << " " << title << " " << std::setfill('=') << std::setw(ceil((windowSizeDiffT) / 2 )) << "=";
 		std::cout << endl;
 		std::cout << std::setfill('=') << std::setw(ceil((windowSizeDiffS - 1) / 2)) << " " << subtitle << " " << std::setfill('=') << std::setw(ceil((windowSizeDiffS) / 2)) << "=";
 		//show content
@@ -356,11 +361,17 @@ Good:                   Too Low:                   Too High:
 			std::cout << endl << CreateDivider() << endl;
 		}
 		//return the question
-		return question.ask(helper);
+		return question.ask(*this);
 	}	
 
-	//replace text in a string
-	//easier than typing out all that
+
+	/// <summary>
+	/// replace text in a string
+	/// </summary>
+	/// <param name="original">The string containing the substring to replace</param>
+	/// <param name="oldsubstr">The substring to replace</param>
+	/// <param name="newsubstr">The new string to insert</param>
+	/// <returns></returns>
 	string replaceText(string original, string oldsubstr, string newsubstr) {
 		return original.replace(original.find(oldsubstr), sizeof(oldsubstr) - 1, newsubstr);
 	}
@@ -371,7 +382,13 @@ Good:                   Too Low:                   Too High:
 
 
 
-//Get a list of employees
+
+
+/// <summary>
+/// Get a list of employees
+/// </summary>
+/// <param name="helper">Helper class</param>
+/// <returns>returns a vector of employees</returns>
 vector<Employee> GetEmployees(Helper& helper) {
 	/*
 	format of original output:
@@ -420,8 +437,12 @@ vector<Employee> GetEmployees(Helper& helper) {
 	return outputarr;
 }
 
-// get a singular Employee nm\
-//will return an Employee with the name "NULL" if no Employee was found
+/// <summary>
+///  get a singular Employee will return an employee with the name "NULL" if no employee was found
+/// </summary>
+/// <param name="helper">Helper class</param>
+/// <param name="name">the name or ID of the employee</param>
+/// <returns></returns>
 Employee GetEmployee(Helper& helper, string name) {
 	//Get all employees and check f\or the specific ID or username passed in
 	vector<Employee> employees = GetEmployees(helper);
@@ -433,15 +454,22 @@ Employee GetEmployee(Helper& helper, string name) {
 	return { "NULL", "", 0.0 };
 
 }
-//GetPayments function will get the payment info from a file and return it;
-//output format:
-//		  [0]				[1]
-// {monthly before}, {monthly after}};
+
+
+
+
+/// <summary>
+/// GetPayments function will get the payment info from a file and return it
+/// </summary>
+/// <param name="helper">Helper class</param>
+/// <param name="file">The file we want to read from</param>
+/// <returns>returns a vector of monthlies, e.g. {monthly(before), monthly(after)} in string format</returns>
 vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 	vector<string> outputLine = {};
 	vector<string> outputCompTemp = {};
 	vector<vector<string>> output = { {} };
-
+	vector<string> errors;
+	std::stringstream errorBuffer;
 	//read the month file passed in;
 	string data = helper.Read(file);
 	//Parse the File:
@@ -473,13 +501,16 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 		if (outputCompTemp.size() < 2) {
 			if (count == 0) {
 				//we have an ID but not hours
-				std::cout << endl << "We are missing the ID! for hours: " << word << endl;
-				system("pause");
+
+				errorBuffer << "We are missing the ID! for hours: " << word;
+				errors.push_back(errorBuffer.str());
+				errorBuffer = std::stringstream();
 			}
 			else {
 				//we have hours but not an ID
-				std::cout << endl <<  "We are missing hours! for ID: " << word << endl;
-				system("pause");
+				errorBuffer << "We are missing hours! for ID: " << word;
+				errors.push_back(errorBuffer.str());
+				errorBuffer = std::stringstream();
 			}
 			outputCompTemp.clear();
 			continue;
@@ -488,12 +519,111 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 		output.push_back(outputCompTemp);
 		outputCompTemp.clear();
 	}
+	writeErrors(helper, file, errors);
 	return output;
 }
 
+//
+
+/// <summary>
+/// write an error to the error file
+/// </summary>
+/// <param name="file">The file the errors was found in</param>
+/// <param name="desc">A vector of descriptions of the errors</param>
+void writeErrors(Helper &helper, string file, vector<string> desc) {
+	//file format
+	//[Month]
+	//description of error
+	//description of error
+	//description of error
+	//[/Month]
+
+	//string that will be written
 
 
-//write the monthlies to a file
+	std::string oldata;
+	std::stringstream returnout;
+	string filebase = file.substr(file.find_last_of("/\\") + 1);
+
+	//create the string
+
+	//get the basename of the file
+	returnout << "[" << filebase << "]";
+	for (string error : desc) {
+		returnout << endl << error;
+	}
+	returnout << endl << "[/" << filebase << "]";
+
+
+
+	std::cout << returnout.str() << endl;
+	//check if the file exists
+
+
+
+
+
+	//if not skip straight to writing the file as we dont need to check anything
+	if (!std::filesystem::exists(".\\errors.txt")) {
+		helper.Write(".\\errors.txt", returnout.str());
+	}
+	else {
+		//read the file and loop through until we find this month.
+		//if we find it then keep looping until we find [/month]
+		//count the amount of loops from [month] to [/month] and delete these lines
+
+
+		//add the new data to the end of the file
+
+		//get the current data in the file
+		oldata = helper.Read(".\\errors.txt");
+		string dataBuffer;
+		bool found = false;
+		int countFirst = 0;
+		int count = 0;
+		//check if the file contains the month
+		while (getline(std::stringstream(oldata), dataBuffer)) {
+			count++;
+			if (found) {
+				if (dataBuffer == "[/" + filebase + "]") {
+					//we found the end of this month!
+					//delete the first index of the month from the last index of the month
+					oldata.erase(countFirst, count);
+					oldata += returnout.str();
+				}
+			}
+			if (dataBuffer == "[" + filebase + "]") {
+				//we have found the month!
+				//keep looping until we find [/month]
+				found = true;
+				countFirst = count;
+				continue;
+			}
+		}
+
+
+
+
+
+		//create the string to write to the file
+	}
+
+
+
+
+
+
+
+}
+
+/// <summary>
+/// write the monthlies to a file
+/// </summary>
+/// <param name="helper">Helper class</param>
+/// <param name="monthlies">Vector of the before and after tax monthly pay</param>
+/// <param name="hours">Vector of hours worked</param>
+/// <param name="employees">vector of employee info</param>
+/// <param name="filename">the name of the month file</param>
 void writeMonthlies(Helper &helper, vector<vector<double>> monthlies, vector<string> hours, vector<Employee> employees, string filename) {
 	//strings that will be written to the file
 	std::stringstream outputString;
@@ -502,8 +632,7 @@ void writeMonthlies(Helper &helper, vector<vector<double>> monthlies, vector<str
 	filename = helper.replaceText(filename, ".txt", "_output.txt");
 	//Taken from: https://stackoverflow.com/questions/8520560/get-a-file-name-from-a-path
 	string base_filename = filename.substr(filename.find_last_of("/\\") + 1);
-	filename = ".\\months\\output\\" + base_filename;
-	system("pause");
+	filename = ".\\output\\" + base_filename;
 	//for each employee then construct a string which will be written on a line of the file
 	//format of each line:
 	//ID hours monthly(before) monthly(after)
@@ -516,6 +645,12 @@ void writeMonthlies(Helper &helper, vector<vector<double>> monthlies, vector<str
 	//write to the file
 	helper.Write(filename, outputString.str());
 }
+/// <summary>
+///	 Calculate the Monthly Pay for the specified employee
+/// </summary>
+/// <param name="hours">The hours worked</param>
+/// <param name="employee">The employees information</param>
+/// <returns></returns>
 vector<double> CalculateMonthly(double hours, Employee employee) {
 	//You must multiply your monthly income by twelve to establish the annual income.If this is less than £12570, then tax should not be deducted,
 	//Calculating Income Tax :
@@ -524,17 +659,20 @@ vector<double> CalculateMonthly(double hours, Employee employee) {
 	//£24, 000 - £12, 570 = £11, 430 (taxable income)
 	//£11, 430 * 0.20 = £2, 286 (annual income tax)
 	//£2, 286 / 12 = £190.50 (monthly tax deduction).
+	//subtract from monthly
 	double monthly;
 	double monthlytaxed;
 	double annual;
 	double annualtaxed;
+	double threshold = 12570;
+	double percentage = 0.20;
 	//calculate their monthly income:
 	//pay rate * hours to get the amount of pay over the month
 	monthly = employee.pay * hours;
 	annual = monthly * 12;
-	if (annual >= 12570) {
+	if (annual >= threshold) {
 		//this person can be taxed
-		annualtaxed = (annual - 12570) * 0.20;
+		annualtaxed = (annual - threshold) * percentage;
 		monthlytaxed = annualtaxed / 12;
 		monthlytaxed = monthly - monthlytaxed;
 	}
@@ -546,9 +684,16 @@ vector<double> CalculateMonthly(double hours, Employee employee) {
 	return { monthly, monthlytaxed};
 }
 
-//get a single employees payment info
-//get the Employee that has the specified ID, display it and then get the monthly pay and hours worked for the ID
-//then calculate the monthly pay with/without tax
+
+
+/// <summary>
+/// get a single employees payment info
+/// get the Employee that has the specified ID, display it and then get the monthly pay and hours worked for the ID
+///	then calculate the monthly pay with/without tax
+/// </summary>
+/// <param name="helper">Helper class</param>
+/// <param name="ID">The ID of the employee we want to view pay info for</param>
+/// <returns>returns a table containing the info</returns>
 string ViewSinglePayment(Helper& helper, string ID) {
 	//the stringstream that will be outputted
 	std::stringstream returnout;
@@ -571,12 +716,11 @@ string ViewSinglePayment(Helper& helper, string ID) {
 				if (employee[0] == info.ID && employee.size() > 1) {
 					//add this to the list for each month
 					//add the stuff from the month plus the file name
-					outputMonths.push_back({employee[0], employee[1], entry.path().string()});
+					outputMonths.push_back({ employee[0], employee[1], entry.path().string() });
 				}
 			}
 		}
 	}
-
 	//create and display table
 	monthlyTable.add_row({"Month", "Hours Worked", "Monthly(Before Tax)", "Monthly (After Tax)"});
 	for (auto i : outputMonths) {
@@ -586,12 +730,12 @@ string ViewSinglePayment(Helper& helper, string ID) {
 		std::stringstream monthlyAfter;
 		std::stringstream monthlyBefore;
 		if(monthlies[1] != -1){
-			monthlyAfter << char(156) << std::fixed << std::setprecision(2) << monthlies[1];
+			monthlyAfter << helper.getMoneySign() << std::fixed << std::setprecision(2) << monthlies[1];
 		}
 		else {
 			monthlyAfter << "N/A";
 		}
-		monthlyBefore << char(156) << std::fixed << std::setprecision(2) << monthlies[0];
+		monthlyBefore << helper.getMoneySign() << std::fixed << std::setprecision(2) << monthlies[0];
 		
 		//add the values to the table
 		monthlyTable.add_row({ i[2], i[1]+"hrs", monthlyBefore.str(), monthlyAfter.str()});
@@ -601,8 +745,15 @@ string ViewSinglePayment(Helper& helper, string ID) {
 	return employeeTable + "\n" + monthlyTable.str();
  }
 
-//return a list of payment information for a specified month including Employee id, name, rate of pay, hours worked, monthly pay before and after tax;
-//TODO: Get Hours worked for each Employee;
+
+
+
+/// <summary>
+/// return a list of payment information for a specified month including Employee id, name, rate of pay, hours worked, monthly pay before and after tax;
+/// </summary>
+/// <param name="helper">Helper Class</param>
+/// <param name="filename">The file that we are viewing from</param>
+/// <returns>a table containing all the relevant info</returns>
 string ViewPaymentFile(Helper& helper, string filename) { 
 	//get all the payments in this file
 	vector<vector<string>> data = GetAllPayments(helper, filename);
@@ -629,14 +780,14 @@ string ViewPaymentFile(Helper& helper, string filename) {
 				std::stringstream monthlyAfter;
 				std::stringstream monthlyBefore;
 				if (monthlies[1] != -1) {
-					monthlyAfter << char(156) << std::fixed << std::setprecision(2) << monthlies[1];
+					monthlyAfter << helper.getMoneySign() << std::fixed << std::setprecision(2) << monthlies[1];
 				}
 				else {
 					monthlyAfter << "N/A";
 				}
-				monthlyBefore << char(156) << std::fixed << std::setprecision(2) << monthlies[0];
+				monthlyBefore << helper.getMoneySign() << std::fixed << std::setprecision(2) << monthlies[0];
 				std::stringstream pay;
-				pay << char(156) << std::fixed << std::setprecision(2) << info.pay;
+				pay << helper.getMoneySign() << std::fixed << std::setprecision(2) << info.pay;
 				table.add_row({ info.name, info.ID, pay.str(), monthlyBefore.str(), monthlyAfter.str() });
 			}
 			else {
@@ -650,7 +801,11 @@ string ViewPaymentFile(Helper& helper, string filename) {
 }
 
 
-//return a list of employees information including Employee id, name and rate of pay
+/// <summary>
+/// View All info about an employee
+/// </summary>
+/// <param name="helper">Helper class</param>
+/// <returns>table containing the info</returns>
 string ViewAllInfo(Helper& helper) {
 	vector<Employee> employees = GetEmployees(helper);
 	//Create table
@@ -658,25 +813,35 @@ string ViewAllInfo(Helper& helper) {
 	table.add_row({ "Name", "ID", "Rate of Pay"});
 	for (Employee i : employees) {
 		std::stringstream pay;
-		pay << char(156) << std::fixed << std::setprecision(2) << i.pay;
+		pay << helper.getMoneySign() << std::fixed << std::setprecision(2) << i.pay;
 		table.add_row({ i.name, i.ID, pay.str() });
 	}
 	return table.str();
 }
 
 
-//get a single employees information
+/// <summary>
+/// get a single employees information
+/// </summary>
+/// <param name="helper">Helper Class </param>
+/// <param name="employee">the employee we are viewing the info for</param>
+/// <returns>a table containing the info</returns>
 string ViewSingleInfo(Helper &helper, Employee employee) {
 	tabulate::Table table;
 	std::stringstream payFormat;
 	table.add_row({ "Name", "ID", "Rate of Pay" });
 	std::stringstream pay;
-	pay << char(156) << std::fixed << std::setprecision(2) << employee.pay;
+	pay << helper.getMoneySign() << std::fixed << std::setprecision(2) << employee.pay;
 	table.add_row({ employee.name, employee.ID, pay.str()});
 	return table.str();
 }
 
-//get and show payment information
+
+/// <summary>
+/// get and show payment information
+/// </summary>
+/// <param name="helper">Helper class </param>
+/// <param name="content">The content of the menu</param>
 void Payment(Helper& helper, string content) {
 	system("cls");
 	int answer = helper.Menu("Payment Information", "View Payment Information", content, { "What Would You Like to do?", {"View Payment Info for an Employee", "View information from a month file"}});
@@ -706,7 +871,12 @@ void Payment(Helper& helper, string content) {
 	}
 	Payment(helper, content);
 }
-//get and show Employee information
+
+/// <summary>
+/// get and show Employee information
+/// </summary>
+/// <param name="helper">Helper class</param>
+/// <param name="content">The content shown in the menu</param>
 void Info(Helper& helper, string content) {
 	system("cls");
 	int answer = helper.Menu("Employee Information", "View Employee information", content, { "What Would You Like To Do", {"View all", "View a specific Employee"}});
@@ -736,7 +906,11 @@ void Info(Helper& helper, string content) {
 	}
 	Info(helper, content);
 }
-//configure the programs settings.
+
+/// <summary>
+/// configure the programs settings.
+/// </summary>
+/// <param name="helper">Helper class</param>
 void config(Helper& helper) {
 	system("cls");
 	int answer = helper.Menu("Config", "Configure program settings", "", { "What Would you Like to do?", {"Window Size", "View Error List"}});
@@ -755,7 +929,11 @@ void config(Helper& helper) {
 
 	config(helper);
 }
-//Welcome Screen
+
+/// <summary>
+/// Welcome Screen
+/// </summary>
+/// <param name="helper">Helper class</param>
 void Welcome(Helper& helper) {
 	system("cls");
 	std::vector <std::string> messages = {"Live Long and Prosper!", "Hey you you're finally awake!", "Keep the change, ya filthy animal!!", "Also try Minecraft!!", "Han didn't shoot first!!", "I guess you guys aren't ready for that yet. But your kids are gonna love it!", "When you get to Hell, Tell 'em Viper sent you!", "If my grandmother had wheels she would have been a bike!", "Well excuse me, princess!", "Also try Terraria!", "Not on Steam!", "As seen on TV!"};
@@ -771,11 +949,11 @@ void Welcome(Helper& helper) {
 	std::mt19937 gen(rd());
 	std::uniform_int_distribution<> distrib(min, max);
 	//---------------------------------------------------------
-	string splash = "{splash}\n" + helper.CreateDivider();
+	string splash = "{splash}" + helper.CreateDivider() + "\n";
 	string content = splash + "The payroll system will contain all the information for an Employee and their pay including income tax";
 	//replace {splash} with a random message chosen by random number generator above
 	int randomint = distrib(gen);
-	content = helper.replaceText(content, "{splash}", messages[randomint]);
+	content = helper.replaceText(content, "{splash}", messages[randomint]+"\n");
 	
 
 	
@@ -803,9 +981,12 @@ void Welcome(Helper& helper) {
 
 	Welcome(helper);
 }
-/*
-The main function just starts the program could also be useful for restarting the program as everything is done outside this function.
-*/
+
+
+/// <summary>
+/// The main function just starts the program could also be useful for restarting the program as everything is done outside this function.
+/// </summary>
+/// <returns></returns>
 int main() {
 	std::cout << "- WARNING -\nResizing Window smaller than default may cause menus to break\n";
 	system("pause");
@@ -818,7 +999,7 @@ int main() {
 	}
 	//output folder
 	else if (!std::filesystem::exists(".\\months\\output")) {
-		system("mkdir .\\months\\output");
+		system("mkdir .\\output");
 	}
 
 	//create the helper object which contains helper functions and set the window size
