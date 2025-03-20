@@ -279,29 +279,33 @@ Good:                   Too Low:                   Too High:
 	/// Read a text file and return the result, this function does no parsing and will just return what is exactly in the file
 	/// </summary>
 	/// <param name="filename">The path to the file you want to read.</param>
-	/// <returns></returns>
+	/// <returns>Returns of the data in the file</returns>
 	string Read(string filename) {
 		if (!std::filesystem::exists(filename)) {
 			return "Something went wrong and we couldnt find the file";
 		}
-		//read a whole line, including the white space
-		//create variable for the file we are reading
-		std::ifstream infile;
-		//and for the string to write the result to a buffer
-		string str;
-		//write to this and then add to the actual return string
-		string buffer;
-		//open the file
-		infile.open(filename);
-		//get the first line in the file
-		while (!infile.eof()) {
-			std::getline(infile, buffer);
-			str += "\n" + buffer;
+		else {
+			//read a whole line, including the white space
+			//create variable for the file we are reading
+			std::ifstream infile;
+			//and for the string to write the result to a buffer
+			std::stringstream str;
+			//write to this and then add to the actual return string
+			string buffer;
+			//open the file
+			infile.open(filename);
+			//get the first line in the file
+			while (!infile.eof()) {
+				std::getline(infile, buffer);
+				str << buffer << "\n";
+			}
+			//close the file
+			infile.close();
+			return str.str();
 		}
-		//close the file
-		infile.close();
-		return str;
 	}
+
+
 	/// <summary>
 	/// Write to a text file
 	/// </summary>
@@ -316,12 +320,15 @@ Good:                   Too Low:                   Too High:
 		outfile << data;
 		outfile.close();
 	}
+
+
+
 	/// <summary>
 	/// Create a Divider using the '-' character
 	/// </summary>
-	/// <param name="size">the size of the divider if set to -1 will create based on windowSize</param>
+	/// <param name="size">the size of the divider if set to -1 or left unset will create based on windowSize</param>
 	/// <param name="divider">the divider to use defaults to '-' </param>
-	/// <returns></returns>
+	/// <returns>returns a string containing the divider</returns>
 	const string CreateDivider(int size = -1, char divider = '-') {
 		if (size == -1) {
 			size = this->mWindowSize;
@@ -464,11 +471,10 @@ Employee GetEmployee(Helper& helper, string name) {
 /// <param name="helper">Helper class</param>
 /// <param name="file">The file we want to read from</param>
 /// <returns>returns a vector of monthlies, e.g. {monthly(before), monthly(after)} in string format</returns>
-vector<vector<string>> GetAllPayments(Helper& helper, string file) {
+vector<vector<string>> GetAllPayments(Helper& helper, string file, vector<string> &errors) {
 	vector<string> outputLine = {};
 	vector<string> outputCompTemp = {};
 	vector<vector<string>> output = { {} };
-	vector<string> errors;
 	std::stringstream errorBuffer;
 	//read the month file passed in;
 	string data = helper.Read(file);
@@ -501,7 +507,6 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 		if (outputCompTemp.size() < 2) {
 			if (count == 0) {
 				//we have an ID but not hours
-
 				errorBuffer << "We are missing the ID! for hours: " << word;
 				errors.push_back(errorBuffer.str());
 				errorBuffer = std::stringstream();
@@ -519,7 +524,6 @@ vector<vector<string>> GetAllPayments(Helper& helper, string file) {
 		output.push_back(outputCompTemp);
 		outputCompTemp.clear();
 	}
-	writeErrors(helper, file, errors);
 	return output;
 }
 
@@ -537,6 +541,12 @@ void writeErrors(Helper &helper, string file, vector<string> desc) {
 	//description of error
 	//description of error
 	//[/Month]
+	//[Month]
+	//description of error
+	//description of error
+	//description of error
+	//[/Month]
+
 
 	//string that will be written
 
@@ -553,22 +563,14 @@ void writeErrors(Helper &helper, string file, vector<string> desc) {
 		returnout << endl << error;
 	}
 	returnout << endl << "[/" << filebase << "]";
-
-
-
-	std::cout << returnout.str() << endl;
 	//check if the file exists
-
-
-
-
-
 	//if not skip straight to writing the file as we dont need to check anything
 	if (!std::filesystem::exists(".\\errors.txt")) {
 		helper.Write(".\\errors.txt", returnout.str());
+		return;
 	}
 	else {
-		//read the file and loop through until we find this month.
+		//read the file and loop through until we find [month].
 		//if we find it then keep looping until we find [/month]
 		//count the amount of loops from [month] to [/month] and delete these lines
 
@@ -581,18 +583,24 @@ void writeErrors(Helper &helper, string file, vector<string> desc) {
 		bool found = false;
 		int countFirst = 0;
 		int count = 0;
+		vector<string> tempVector;
+		std::stringstream ss(oldata);
+		//create a vector of each line
+		while (bool(getline(ss, dataBuffer, '\n')) && not dataBuffer.empty()) {
+			tempVector.push_back(dataBuffer);
+		}
 		//check if the file contains the month
-		while (getline(std::stringstream(oldata), dataBuffer)) {
+		for(string i: tempVector) {
 			count++;
 			if (found) {
-				if (dataBuffer == "[/" + filebase + "]") {
+				if (i == "[/" + filebase + "]") {
 					//we found the end of this month!
-					//delete the first index of the month from the last index of the month
-					oldata.erase(countFirst, count);
-					oldata += returnout.str();
+					//delete from the first to last index of the month
+					tempVector.erase(tempVector.begin()+countFirst,  tempVector.begin()+count);
+					break;
 				}
 			}
-			if (dataBuffer == "[" + filebase + "]") {
+			else if (i == "[" + filebase + "]") {
 				//we have found the month!
 				//keep looping until we find [/month]
 				found = true;
@@ -602,10 +610,16 @@ void writeErrors(Helper &helper, string file, vector<string> desc) {
 		}
 
 
+		
+		std::stringstream newdata;
+		//rebuild the string
+		for (string str : tempVector) {
+			newdata << str << "\n";
+		}
+		newdata << returnout.str();
 
 
-
-		//create the string to write to the file
+		helper.Write(".\\errors.txt", newdata.str());
 	}
 
 
@@ -708,9 +722,10 @@ string ViewSinglePayment(Helper& helper, string ID) {
 	std::string employeeTable = ViewSingleInfo(helper, info);
 	//for each month we get the entire file and find the ID passed in
 	std::string path = ".\\months";
+	vector<string> errors;
 	for (const auto& entry : std::filesystem::directory_iterator(path)) {
 		//get all the payments in this file
-		vector<vector<string>> data = GetAllPayments(helper, entry.path().string());
+		vector<vector<string>> data = GetAllPayments(helper, entry.path().string(), errors);
 		for (vector<string> employee : data) {
 			if (!employee.empty()) {
 				if (employee[0] == info.ID && employee.size() > 1) {
@@ -756,7 +771,10 @@ string ViewSinglePayment(Helper& helper, string ID) {
 /// <returns>a table containing all the relevant info</returns>
 string ViewPaymentFile(Helper& helper, string filename) { 
 	//get all the payments in this file
-	vector<vector<string>> data = GetAllPayments(helper, filename);
+
+	vector<string> errors;
+	std::stringstream errorBuffer;
+	vector<vector<string>> data = GetAllPayments(helper, filename, errors);
 	//Create table
 	tabulate::Table table;
 
@@ -791,11 +809,13 @@ string ViewPaymentFile(Helper& helper, string filename) {
 				table.add_row({ info.name, info.ID, pay.str(), monthlyBefore.str(), monthlyAfter.str() });
 			}
 			else {
-				std::cout << endl << "Employee with ID: " << payment[0] << " doesn't exist, maybe it's typed wrong?" << endl;
-				system("pause");
+				/*errorBuffer << "Employee with ID: " << payment[0] << " doesn't exist";
+				errors.push_back(errorBuffer.str());*/
+				continue;
 			}
 		}
 	}
+	writeErrors(helper, filename, errors);
 	writeMonthlies(helper, monthliesVector, hours, employees, filename);
 	return table.str();
 }
@@ -860,7 +880,10 @@ void Payment(Helper& helper, string content) {
 		string file;
 		std::cout << "Please input filename of the month (e.g. Mar25.txt) (case sensitive)\n- ";
 		std::getline(std::cin, file);
-		if (std::filesystem::exists(".\\months\\" + file)) {
+		if (file.size() < 2) {
+			content = "That File Doesn't Exist";
+		}
+		else if (std::filesystem::exists(".\\months\\" + file)) {
 			content = ViewPaymentFile(helper, ".\\months\\" + file);
 		}
 		else {
