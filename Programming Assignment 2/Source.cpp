@@ -66,7 +66,7 @@ TODO:	/  Not Finished
 	* Find specified Employee Pay for each month //
 	* Read from pay file by inputting file name //
 	* Write employees id number and monthly pay before tax deduction to a file called '{month_file}_output.txt' //
-	* Record error in a pay file by adding it to a file called errors.txt in format {name of file} {error description} /
+	* Record error in a pay file by adding it to a file called errors.txt in format {name of file} {error description} //
 
 
 
@@ -296,8 +296,9 @@ Good:                   Too Low:                   Too High:
 			infile.open(filename);
 			//get the first line in the file
 			while (!infile.eof()) {
-				std::getline(infile, buffer);
-				str << buffer << "\n";
+				if (std::getline(infile, buffer)) {
+					str << buffer << "\n";
+				}
 			}
 			//close the file
 			infile.close();
@@ -556,7 +557,6 @@ void writeErrors(Helper &helper, string file, vector<string> desc) {
 	string filebase = file.substr(file.find_last_of("/\\") + 1);
 
 	//create the string
-
 	//get the basename of the file
 	returnout << "[" << filebase << "]";
 	for (string error : desc) {
@@ -596,7 +596,7 @@ void writeErrors(Helper &helper, string file, vector<string> desc) {
 				if (i == "[/" + filebase + "]") {
 					//we found the end of this month!
 					//delete from the first to last index of the month
-					tempVector.erase(tempVector.begin()+countFirst,  tempVector.begin()+count);
+					tempVector.erase(tempVector.begin()+(countFirst-1), tempVector.begin() + count);
 					break;
 				}
 			}
@@ -809,13 +809,23 @@ string ViewPaymentFile(Helper& helper, string filename) {
 				table.add_row({ info.name, info.ID, pay.str(), monthlyBefore.str(), monthlyAfter.str() });
 			}
 			else {
-				/*errorBuffer << "Employee with ID: " << payment[0] << " doesn't exist";
-				errors.push_back(errorBuffer.str());*/
+				errorBuffer = std::stringstream();
+				errorBuffer << "Employee with ID: " << payment[0] << " doesn't exist";
+				if (not errors.empty()) {
+					if (errors.back() != errorBuffer.str() ) {
+						errors.push_back(errorBuffer.str());
+					}
+				}
+				else {
+					errors.push_back(errorBuffer.str());
+				}
 				continue;
 			}
 		}
 	}
-	writeErrors(helper, filename, errors);
+	if (not errors.empty()) {
+		writeErrors(helper, filename, errors);
+	}
 	writeMonthlies(helper, monthliesVector, hours, employees, filename);
 	return table.str();
 }
